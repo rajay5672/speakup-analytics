@@ -7,453 +7,465 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <style>
     :root {
-      --bg: #0d1117;
-      --bg-card: #161b22;
-      --border: #21262d;
-      --text: #e6edf3;
-      --text-secondary: #8b949e;
-      --text-muted: #484f58;
-      --accent: #58a6ff;
-      --accent-green: #3fb950;
-      --accent-purple: #bc8cff;
-      --accent-orange: #d29922;
-      --accent-red: #f85149;
-      --accent-cyan: #39d2c0;
-      --accent-pink: #f778ba;
-      --funnel-start: #238636;
-      --funnel-end: #2ea043;
+      --bg: #0d1117; --bg2: #161b22; --bg3: #1c2128; --border: #21262d;
+      --text: #e6edf3; --text2: #8b949e; --text3: #484f58;
+      --blue: #58a6ff; --green: #3fb950; --purple: #bc8cff;
+      --orange: #d29922; --red: #f85149; --cyan: #39d2c0; --pink: #f778ba;
     }
-
     [data-theme="light"] {
-      --bg: #f6f8fa;
-      --bg-card: #ffffff;
-      --border: #d0d7de;
-      --text: #1f2328;
-      --text-secondary: #656d76;
-      --text-muted: #8c959f;
-      --accent: #0969da;
-      --accent-green: #1a7f37;
-      --accent-purple: #8250df;
-      --accent-orange: #bf8700;
-      --accent-red: #cf222e;
-      --accent-cyan: #0e8a7e;
-      --accent-pink: #bf3989;
-      --funnel-start: #1a7f37;
-      --funnel-end: #2da44e;
+      --bg: #f6f8fa; --bg2: #ffffff; --bg3: #f0f2f5; --border: #d0d7de;
+      --text: #1f2328; --text2: #656d76; --text3: #8c959f;
+      --blue: #0969da; --green: #1a7f37; --purple: #8250df;
+      --orange: #bf8700; --red: #cf222e; --cyan: #0e8a7e; --pink: #bf3989;
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    .wrap { max-width: 1140px; margin: 0 auto; padding: 28px 24px; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-    }
+    /* Header */
+    .hdr { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+    .hdr h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; }
+    .hdr-right { display: flex; align-items: center; gap: 8px; }
+    .subtitle { color: var(--text2); font-size: 12px; margin-top: 2px; }
 
-    .container {
-      max-width: 1140px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
+    /* Controls */
+    .controls { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+    .pill:hover { border-color: var(--blue); color: var(--text); }
+    .pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn-icon { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-radius: 8px; padding: 5px 10px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+    .btn-icon:hover { border-color: var(--blue); color: var(--text); }
 
-    /* ── Header ── */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 32px;
-    }
-    .header h1 {
-      font-size: 24px;
-      font-weight: 600;
-      letter-spacing: -0.5px;
-    }
-    .header .subtitle {
-      color: var(--text-secondary);
-      font-size: 13px;
-      margin-top: 4px;
-    }
-    .theme-toggle {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .theme-toggle:hover {
-      border-color: var(--accent);
-      color: var(--text);
-    }
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .stat .lbl { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat .val { font-size: 30px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .stat .sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
-    /* ── Section headers ── */
-    .section-header {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin: 36px 0 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-    }
+    /* Section */
+    .sec { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.7px; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 
-    /* ── Stat cards ── */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .stat-card .label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-    .stat-card .value {
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--text);
-      margin-top: 6px;
-      font-variant-numeric: tabular-nums;
-    }
-    .stat-card .sub {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
+    /* Cards / Grid */
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
+    .grid.g1 { grid-template-columns: 1fr; }
+    .grid.g3 { grid-template-columns: repeat(3, 1fr); }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .card h3 { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 14px; }
+    .cw { position: relative; }
+    .cw.h240 { height: 240px; }
+    .cw.h280 { height: 280px; }
+    .cw.h200 { height: 200px; }
+    .cw canvas { width: 100% !important; height: 100% !important; }
 
-    /* ── Chart cards ── */
-    .chart-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .chart-grid.single { grid-template-columns: 1fr; }
-    .chart-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .chart-card h3 {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 16px;
-    }
-    .chart-wrapper {
-      position: relative;
-      width: 100%;
-    }
-    .chart-wrapper.line-chart { height: 240px; }
-    .chart-wrapper.bar-chart { height: 280px; }
-    .chart-wrapper.pie-chart { height: 220px; max-width: 220px; margin: 0 auto; }
-    .chart-wrapper canvas { width: 100% !important; height: 100% !important; }
-
-    .pie-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    .pie-section { text-align: center; }
-    .pie-section h4 {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-
-    /* ── Table ── */
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-    }
-    th {
-      text-align: left;
-      padding: 10px 16px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--border);
-    }
-    td {
-      padding: 10px 16px;
-      font-size: 14px;
-      color: var(--text);
-      border-bottom: 1px solid var(--border);
-    }
-    td.num {
-      font-variant-numeric: tabular-nums;
-      font-weight: 500;
-      text-align: right;
-    }
+    /* Tables */
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th { text-align: left; padding: 8px 14px; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid var(--border); }
+    td { padding: 8px 14px; font-size: 13px; border-bottom: 1px solid var(--border); }
+    td.n { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
     th:last-child { text-align: right; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: var(--bg); }
+    .empty { color: var(--text3); font-style: italic; padding: 40px 0; text-align: center; font-size: 13px; }
 
-    /* ── Funnel ── */
-    .funnel { display: flex; flex-direction: column; gap: 10px; }
-    .funnel-step { display: flex; align-items: center; gap: 16px; }
-    .funnel-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      min-width: 160px;
-      text-align: right;
-    }
-    .funnel-bar {
-      height: 36px;
-      background: linear-gradient(90deg, var(--funnel-start), var(--funnel-end));
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      transition: width 0.4s ease;
-    }
-    .funnel-count {
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-      white-space: nowrap;
-    }
+    /* Funnel */
+    .funnel { display: flex; flex-direction: column; gap: 8px; }
+    .fs { display: flex; align-items: center; gap: 14px; }
+    .fl { font-size: 12px; font-weight: 500; color: var(--text2); min-width: 150px; text-align: right; }
+    .fb { height: 34px; background: linear-gradient(90deg, var(--green), #2ea043); border-radius: 6px; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; min-width: 50px; }
 
-    /* ── Empty state ── */
-    .empty-state {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 180px;
-      color: var(--text-muted);
-      font-size: 14px;
-      font-style: italic;
-    }
+    /* Source list */
+    .source-list { list-style: none; }
+    .source-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .source-item:last-child { border-bottom: none; }
+    .source-name { color: var(--text); }
+    .source-bar-wrap { flex: 1; margin: 0 16px; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+    .source-bar { height: 100%; border-radius: 3px; }
+    .source-count { font-variant-numeric: tabular-nums; font-weight: 500; color: var(--text2); min-width: 40px; text-align: right; }
 
-    /* ── Footer ── */
-    footer {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 12px;
-      margin-top: 48px;
-      padding: 20px 0;
-      border-top: 1px solid var(--border);
-    }
+    footer { text-align: center; color: var(--text3); font-size: 11px; margin-top: 40px; padding: 16px 0; border-top: 1px solid var(--border); }
 
-    /* ── Responsive ── */
     @media (max-width: 768px) {
-      .chart-grid { grid-template-columns: 1fr; }
-      .pie-row { grid-template-columns: 1fr; }
-      .container { padding: 16px; }
-      .header { flex-direction: column; gap: 12px; }
-      .funnel-label { min-width: 100px; font-size: 12px; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .grid, .grid.g3 { grid-template-columns: 1fr; }
+      .wrap { padding: 14px; }
+      .hdr { flex-direction: column; align-items: flex-start; }
+      .fl { min-width: 100px; font-size: 11px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <div>
-        <h1>SpeakUp Analytics</h1>
-        <div class="subtitle">Last 30 days &middot; Updated 4/12/2026, 3:21:06 PM MT</div>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">&#9789;</span> <span id="theme-label">Light</span>
-      </button>
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <h1>SpeakUp Analytics</h1>
+      <div class="subtitle">Updated 4/12/2026, 3:28:39 PM MT</div>
     </div>
-
-    <!-- ── Summary Stats ── -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="label">Page Views</div>
-        <div class="value">--</div>
-        <div class="sub">Collecting data...</div>
+    <div class="hdr-right">
+      <div class="controls" id="period-controls">
+        <button class="pill" data-days="7">7d</button>
+        <button class="pill active" data-days="30">30d</button>
+        <button class="pill" data-days="90">90d</button>
       </div>
-      <div class="stat-card">
-        <div class="label">Total Events</div>
-        <div class="value">828</div>
-        <div class="sub">User interactions</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Recording Completion</div>
-        <div class="value">43%</div>
-        <div class="sub">15 of 35 completed</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Lesson Completion</div>
-        <div class="value">3%</div>
-        <div class="sub">1 of 29 completed</div>
-      </div>
+      <button class="btn-icon" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9789;</button>
     </div>
-
-    <!-- ── Traffic ── -->
-    <div class="section-header">Traffic</div>
-
-    
-    <div class="chart-grid single">
-      <div class="chart-card">
-        <div class="empty-state">Page view tracking was just enabled. Data will appear within 24 hours.</div>
-      </div>
-    </div>
-    
-
-    <!-- ── User Behavior ── -->
-    <div class="section-header">User Behavior</div>
-
-    
-    <div class="chart-grid single">
-      <div class="chart-card">
-        <h3>Signup Funnel</h3>
-        <div class="funnel"><div class="funnel-step"><span class="funnel-label">Landing Page</span><div class="funnel-bar" style="width:100%"><span class="funnel-count">470</span></div></div><div class="funnel-step"><span class="funnel-label">Signup Page</span><div class="funnel-bar" style="width:8%"><span class="funnel-count">23 (5%)</span></div></div><div class="funnel-step"><span class="funnel-label">Signup Complete</span><div class="funnel-bar" style="width:8%"><span class="funnel-count">6 (26%)</span></div></div><div class="funnel-step"><span class="funnel-label">Onboarding Complete</span><div class="funnel-bar" style="width:8%"><span class="funnel-count">1 (17%)</span></div></div></div>
-      </div>
-    </div>
-
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Daily Active Users</h3>
-        <div class="chart-wrapper line-chart"><canvas id="dailyDAU"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Events by Category</h3>
-        <div class="chart-wrapper bar-chart"><canvas id="eventCategories"></canvas></div>
-      </div>
-    </div>
-
-    <div class="chart-grid single">
-      <div class="chart-card">
-        <h3>Top Events</h3>
-        <table>
-          <thead><tr><th>Event</th><th>Count</th></tr></thead>
-          <tbody><tr><td>Landing Page View</td><td class="num">470</td></tr><tr><td>Dashboard Viewed</td><td class="num">80</td></tr><tr><td>Try Page Used</td><td class="num">35</td></tr><tr><td>Recording Started</td><td class="num">35</td></tr><tr><td>Lesson Started</td><td class="num">29</td></tr><tr><td>Signup Page View</td><td class="num">23</td></tr><tr><td>Analytics Page Viewed</td><td class="num">20</td></tr><tr><td>Track Selected</td><td class="num">17</td></tr><tr><td>Recording Completed</td><td class="num">15</td></tr><tr><td>Feedback Viewed</td><td class="num">15</td></tr><tr><td>Onboarding Started</td><td class="num">14</td></tr><tr><td>Free Practice Started</td><td class="num">13</td></tr><tr><td>Lesson Step Viewed</td><td class="num">11</td></tr><tr><td>Login Complete</td><td class="num">10</td></tr><tr><td>Onboarding Goals Selected</td><td class="num">8</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    
-
-    <footer>SpeakUp Analytics &middot; Auto-generated 4/12/2026, 3:21:06 PM MT</footer>
   </div>
 
-  <script>
-    // ── Theme toggle ──
-    function toggleTheme() {
-      const html = document.documentElement;
-      const current = html.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      localStorage.setItem('speakup-theme', next);
-      document.getElementById('theme-icon').innerHTML = next === 'dark' ? '\u263D' : '\u2600';
-      document.getElementById('theme-label').textContent = next === 'dark' ? 'Light' : 'Dark';
-      updateChartColors(next);
-    }
+  <div class="stats" id="stats-row"></div>
 
-    // Restore saved theme
-    (function() {
-      const saved = localStorage.getItem('speakup-theme');
-      if (saved === 'light') {
-        document.documentElement.setAttribute('data-theme', 'light');
-        document.getElementById('theme-icon').innerHTML = '\u2600';
-        document.getElementById('theme-label').textContent = 'Dark';
-      }
-    })();
+  <div class="sec">Traffic</div>
+  <div class="grid" id="traffic-grid"></div>
 
-    // ── Chart.js setup ──
-    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+  <div class="sec">Sources</div>
+  <div class="grid g3" id="sources-grid"></div>
 
-    function getChartColors() {
-      return {
-        text: isDark() ? '#8b949e' : '#656d76',
-        grid: isDark() ? '#21262d' : '#d0d7de',
-        blue: isDark() ? '#58a6ff' : '#0969da',
-        green: isDark() ? '#3fb950' : '#1a7f37',
-        purple: isDark() ? '#bc8cff' : '#8250df',
-        orange: isDark() ? '#d29922' : '#bf8700',
-        red: isDark() ? '#f85149' : '#cf222e',
-        cyan: isDark() ? '#39d2c0' : '#0e8a7e',
-        pink: isDark() ? '#f778ba' : '#bf3989',
-      };
-    }
+  <div class="sec">User Behavior</div>
+  <div id="behavior-section"></div>
 
-    const allCharts = [];
-    function updateChartColors(theme) {
-      const c = getChartColors();
-      Chart.defaults.color = c.text;
-      Chart.defaults.borderColor = c.grid;
-      allCharts.forEach(chart => {
-        if (chart.options.scales) {
-          Object.values(chart.options.scales).forEach(scale => {
-            if (scale.grid) scale.grid.color = c.grid;
-            if (scale.ticks) scale.ticks.color = c.text;
-          });
-        }
-        chart.update('none');
-      });
-    }
+  <footer>SpeakUp Analytics &middot; Auto-generated</footer>
+</div>
 
-    const C = getChartColors();
-    Chart.defaults.color = C.text;
-    Chart.defaults.borderColor = C.grid;
-    Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    Chart.defaults.font.size = 12;
-    Chart.defaults.animation.duration = 600;
+<script>
+// ── Raw data ──
+const PV = [];
+const EV = [{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"try_page_used","cat":"feature","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"signup_page_view","cat":"onboarding","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"signup_page_view","cat":"onboarding","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"signup_complete","cat":"onboarding","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"onboarding_started","cat":"onboarding","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"onboarding_goals_selected","cat":"onboarding","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"onboarding_diagnostic_skipped","cat":"onboarding","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"track_selected","cat":"feature","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"free_practice_started","cat":"feature","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"settings_viewed","cat":"feature","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"5fcf086b-db1d-41d1-bd8a-c43f5a82d539"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"try_page_used","cat":"feature","u":"5ae301b5-e4e4-442b-a058-38af2992068c"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"bd17be7e-f11a-4a9b-9db9-eaf330c49d42"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"1c7fa79b-8377-4b4e-83b1-9ae15a5d4b52"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"a9e66b4b-e109-4a03-a551-89eeb3a71faa"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"ca0cfa45-8971-4c91-8c57-c7f9d8bc8e75"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5447d653-6b30-4697-8f00-49b8088b5932"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"4bde33ac-24b3-46ce-8aec-0ce142be14fe"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"4bde33ac-24b3-46ce-8aec-0ce142be14fe"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"4bde33ac-24b3-46ce-8aec-0ce142be14fe"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"4bde33ac-24b3-46ce-8aec-0ce142be14fe"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"4bde33ac-24b3-46ce-8aec-0ce142be14fe"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"64aa843b-f022-4cc2-aa7c-27be0b9b9aa2"},{"d":"2026-03-17","n":"free_practice_started","cat":"feature","u":"64aa843b-f022-4cc2-aa7c-27be0b9b9aa2"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"c99e9720-33f2-4308-96f1-658dcaba606b"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"c99e9720-33f2-4308-96f1-658dcaba606b"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"29668cf8-d375-49d1-bb90-808e6424a14f"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"9028d5f1-825a-4f23-9e93-ca43146dde4a"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"838eea38-2b08-456a-9d96-818c6d32e762"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"d9c6f42b-c97f-43b5-856b-fe8bbd5c995d"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"d9c6f42b-c97f-43b5-856b-fe8bbd5c995d"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"e15e14b6-fb99-42e3-9338-fdab308ebc49"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"dd571ce9-22ab-48fd-9ead-90924732eaee"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"4a0acb5c-8f37-4489-815e-e68f96bd1b20"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"496de99e-ccb9-465e-8f28-a2db6bbf12d0"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"fa98578c-518c-4b5a-8985-973df8c6508d"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"6f456b7a-3b17-4350-bc81-0672e0d2e835"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"5578e764-2df5-44fe-8057-de366bf7b8ca"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"e47b09c6-013e-433d-a931-6d39e18d8416"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"4c7f03b6-0298-4523-bcd3-3af5e2e0099f"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"87d41e13-2250-4fca-81fe-3c10e6e4de18"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"ec38283a-7867-4700-999c-2d33a0db8631"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"a3fa4e26-1aed-4afa-917f-13df15a56b5b"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"a3fa4e26-1aed-4afa-917f-13df15a56b5b"},{"d":"2026-03-17","n":"try_page_used","cat":"feature","u":"a3fa4e26-1aed-4afa-917f-13df15a56b5b"},{"d":"2026-03-17","n":"recording_started","cat":"recording","u":"a3fa4e26-1aed-4afa-917f-13df15a56b5b"},{"d":"2026-03-17","n":"recording_started","cat":"recording","u":"a3fa4e26-1aed-4afa-917f-13df15a56b5b"},{"d":"2026-03-17","n":"recording_started","cat":"recording","u":"a3fa4e26-1aed-4afa-917f-13df15a56b5b"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"a3fa4e26-1aed-4afa-917f-13df15a56b5b"},{"d":"2026-03-17","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"cbdcccc6-1d43-46f5-8588-618696b5c0be"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"a6d7785b-4bd3-4a81-a481-bdbe2d5871b7"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"bd74fa27-1894-4d7a-937a-669209ccb4f5"},{"d":"2026-03-17","n":"landing_page_view","cat":"onboarding","u":"8b624d8b-c45c-4285-ab90-64428cb0c299"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"6f992be9-15b2-48e3-b2d0-b2a315a6ac09"},{"d":"2026-03-18","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"8f81ee30-1ef2-4de8-9da6-fb58f0757a12"},{"d":"2026-03-18","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"8708d58a-0ec1-49b6-976e-ac1fe051405a"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"5b9fad18-3d29-429e-987c-8b7c018d7b29"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"bb7f0a1b-7052-421f-8665-5ddc32ba5875"},{"d":"2026-03-18","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"7262bb67-aae8-4781-a913-a8904327c44f"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"e963380e-0e6d-499d-b8ea-552477688007"},{"d":"2026-03-18","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"awards_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"awards_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"leaderboard_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"settings_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"73b26501-b160-4c3b-ac86-2027573c9db9"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"e4c76657-b8cd-4376-b653-1966c2f2fb15"},{"d":"2026-03-18","n":"landing_page_view","cat":"onboarding","u":"ef49b01f-d57e-46ed-9779-2e702927d53d"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"819bcc95-0060-4d3e-aad3-82f90d7d9ed1"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"f91fe88c-197c-4fae-9116-c92f05a877f5"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"22e5a8d7-1c03-42cc-a57a-76ab330df7e1"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"a9da2638-3dd9-4807-bb18-0fcbb7621025"},{"d":"2026-03-19","n":"signup_page_view","cat":"onboarding","u":"823dd174-a45e-4d04-8da4-7b4809322b94"},{"d":"2026-03-19","n":"signup_page_view","cat":"onboarding","u":"823dd174-a45e-4d04-8da4-7b4809322b94"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"823dd174-a45e-4d04-8da4-7b4809322b94"},{"d":"2026-03-19","n":"try_page_used","cat":"feature","u":"823dd174-a45e-4d04-8da4-7b4809322b94"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"823dd174-a45e-4d04-8da4-7b4809322b94"},{"d":"2026-03-19","n":"signup_page_view","cat":"onboarding","u":"823dd174-a45e-4d04-8da4-7b4809322b94"},{"d":"2026-03-19","n":"signup_page_view","cat":"onboarding","u":"823dd174-a45e-4d04-8da4-7b4809322b94"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"7c957f56-3b19-4587-8464-31eec2745689"},{"d":"2026-03-19","n":"try_page_used","cat":"feature","u":"7c957f56-3b19-4587-8464-31eec2745689"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"2099ec9e-a8c1-4d61-b313-070c4f79a4a0"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"ddb3f065-dd7b-447f-9033-113c4668a26e"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"9269a300-0860-4380-a12d-6c58367482c0"},{"d":"2026-03-19","n":"landing_page_view","cat":"onboarding","u":"a2efec02-849a-4fee-9ad8-b86938c64344"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"rn-1773970098494-2hvg62z"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"3e1b02aa-719a-4e77-8f5f-0cf9a8ba1cb5"},{"d":"2026-03-20","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"9a30a41e-2a1d-4804-924b-9e2b50bcf581"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"1c853c04-7018-4dcc-8da7-b3ffd687507e"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"273ea801-64ae-40e8-8920-5f94e4d0d7bc"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"6f867e63-e678-4158-a6b9-1e24f72b3596"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"7c9beb51-c60e-4565-af34-7ac54397e25c"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"rn-1774030143328-odh56u7"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"rn-1774030143328-odh56u7"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"rn-1774030143328-odh56u7"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"rn-1774030143328-odh56u7"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"rn-1774030143328-odh56u7"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"rn-1774030143328-odh56u7"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"f32bf414-b9a2-47b8-94f1-a7148e837ad2"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"aa8af904-cdfa-431a-8ce8-8073033bc56f"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"rn-1774032034747-9kpmv17"},{"d":"2026-03-20","n":"lesson_started","cat":"mobile","u":"rn-1774032034747-9kpmv17"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"rn-1774032034747-9kpmv17"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"rn-1774032034747-9kpmv17"},{"d":"2026-03-20","n":"lesson_step_viewed","cat":"mobile","u":"rn-1774032034747-9kpmv17"},{"d":"2026-03-20","n":"recording_started","cat":"mobile","u":"rn-1774032034747-9kpmv17"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"b29785e0-c0ec-4b63-aa8a-29a4dd68865c"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"9fdcaa1a-81dc-4284-8f74-78842b320ce9"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"5466e476-c0cc-4852-9aab-87143320c43e"},{"d":"2026-03-20","n":"landing_page_view","cat":"onboarding","u":"ce437d96-d146-4261-95bf-b7f021437488"},{"d":"2026-03-21","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-21","n":"landing_page_view","cat":"onboarding","u":"cf834a90-08d9-4833-b7b2-ae12fd54ecbc"},{"d":"2026-03-21","n":"landing_page_view","cat":"onboarding","u":"cf834a90-08d9-4833-b7b2-ae12fd54ecbc"},{"d":"2026-03-21","n":"landing_page_view","cat":"onboarding","u":"8abca054-49d1-482d-90ab-ef94d2e53ca9"},{"d":"2026-03-22","n":"landing_page_view","cat":"onboarding","u":"c0777571-aadb-4e55-8c1e-56706910eb74"},{"d":"2026-03-22","n":"landing_page_view","cat":"onboarding","u":"ee0e5719-f624-4a67-8763-3caa44506054"},{"d":"2026-03-22","n":"landing_page_view","cat":"onboarding","u":"e815ad6e-9220-4045-aa09-23772275f255"},{"d":"2026-03-22","n":"landing_page_view","cat":"onboarding","u":"3e02c31e-4818-404c-bae0-29b31fe7b77b"},{"d":"2026-03-22","n":"landing_page_view","cat":"onboarding","u":"ab0c78a1-5405-4f1e-bf16-9b2c7807b30d"},{"d":"2026-03-22","n":"try_page_used","cat":"feature","u":"ab0c78a1-5405-4f1e-bf16-9b2c7807b30d"},{"d":"2026-03-22","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"awards_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"settings_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-22","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"41447611-1cdc-454c-8cdd-dbdab911157a"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"7bc5e5e6-05ad-4c7c-9c9c-6f866e5dee80"},{"d":"2026-03-23","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"4d393a80-2477-4d10-976f-016afea09633"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"f01a1b30-43ce-48be-ac86-bb208f9d3fce"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"37b0ca43-f6d3-4e6b-b3c7-3c3615aa3374"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"e4c9ef6c-91a4-4524-89e6-46821a33913a"},{"d":"2026-03-23","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"awards_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"d786a341-43c4-47e6-b971-4651a8590bcf"},{"d":"2026-03-23","n":"landing_page_view","cat":"onboarding","u":"d8df5d9c-de97-46b8-86cf-faf8f1713b9f"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"8147fab3-1db2-48d5-a125-23a969da2eea"},{"d":"2026-03-24","n":"signup_page_view","cat":"onboarding","u":"8147fab3-1db2-48d5-a125-23a969da2eea"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"713069f3-ceb9-404d-9bf3-18bc58690c85"},{"d":"2026-03-24","n":"signup_page_view","cat":"onboarding","u":"713069f3-ceb9-404d-9bf3-18bc58690c85"},{"d":"2026-03-24","n":"signup_page_view","cat":"onboarding","u":"713069f3-ceb9-404d-9bf3-18bc58690c85"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"72cab8b2-6cf8-451a-9d03-667138d4749e"},{"d":"2026-03-24","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"lesson_completed","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"27c9e50d-8944-4aad-bd4d-b1e7b3a600e5"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"3bd781be-21f0-48df-8d52-0a9f40763e6c"},{"d":"2026-03-24","n":"try_page_used","cat":"feature","u":"3bd781be-21f0-48df-8d52-0a9f40763e6c"},{"d":"2026-03-24","n":"recording_started","cat":"recording","u":"3bd781be-21f0-48df-8d52-0a9f40763e6c"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"4ef70243-9541-4264-aafb-a0290896afef"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"98905224-ecf3-46a2-8b5c-7bf48d5298a3"},{"d":"2026-03-24","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"f5a05131-da9d-4b90-bd64-b4b7cb6d447d"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"21e29208-277e-4ea8-896e-9e1e74c2aa8c"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"f6e22fa6-757a-40eb-b353-513aa5d5cd22"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"7adbdb5d-82d9-4768-9a99-ccf9fcbfb10b"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"ae45958c-6924-4737-a8e2-1a69c19030e2"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"c3aaa711-0f99-4104-9cb1-678497ee2803"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"ccdd4864-8430-4d33-927e-a60d459be18a"},{"d":"2026-03-24","n":"landing_page_view","cat":"onboarding","u":"9805b11e-c7d1-4a20-a774-66cb1efbb8b0"},{"d":"2026-03-25","n":"try_page_used","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"free_practice_started","cat":"feature","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"analytics_page_viewed","cat":"feature","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"analytics_page_viewed","cat":"feature","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"awards_page_viewed","cat":"feature","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"analytics_page_viewed","cat":"feature","u":"bae754fe-5ebc-43ff-b165-e617fec22e28"},{"d":"2026-03-25","n":"try_page_used","cat":"feature","u":"3bd781be-21f0-48df-8d52-0a9f40763e6c"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-25","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"a0d4604f-1a34-4a74-a77c-cc574c793e73"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"3d381f8f-9d96-4614-ad01-67cbf00714ef"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"507d405b-c957-46d6-bab4-e447d17d3c01"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-26","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-27","n":"landing_page_view","cat":"onboarding","u":"5ecf1b3e-9f93-443f-9fd0-0c0d8e1780ad"},{"d":"2026-03-27","n":"landing_page_view","cat":"onboarding","u":"7afa5bc7-4a57-4230-9970-c45d83bab8db"},{"d":"2026-03-27","n":"landing_page_view","cat":"onboarding","u":"a845307a-47d1-4a9e-8c32-b50ab3d473ed"},{"d":"2026-03-27","n":"landing_page_view","cat":"onboarding","u":"c3cd4c98-b898-43e3-be3d-95ef88104d2c"},{"d":"2026-03-27","n":"landing_page_view","cat":"onboarding","u":"ac402ee9-41cf-48bb-81c1-2a2454c2c52a"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"696ccd30-be52-4510-8096-7a52b941f49f"},{"d":"2026-03-28","n":"signup_page_view","cat":"onboarding","u":"696ccd30-be52-4510-8096-7a52b941f49f"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"2e5f54cd-3b45-44b1-a2ff-cb6e55c01ff7"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"63eefdd3-2696-46d7-a15e-a94ca989a1b0"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"386e8193-3459-4f12-ad76-05294667fce0"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"b27d21f4-0256-4898-8858-68560cecd7bf"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"85168ba4-2e4a-4050-95dc-36e537a1bdc3"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"3ab93a9f-6498-464c-9dd2-6a9710da5a3e"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"f1efade8-f8f3-43e6-a3c8-fc09339476ae"},{"d":"2026-03-28","n":"try_page_used","cat":"feature","u":"f1efade8-f8f3-43e6-a3c8-fc09339476ae"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"40bde9f3-d5bc-489d-a9fc-7e97dc569f4d"},{"d":"2026-03-28","n":"try_page_used","cat":"feature","u":"40bde9f3-d5bc-489d-a9fc-7e97dc569f4d"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"40bde9f3-d5bc-489d-a9fc-7e97dc569f4d"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"ea69f514-d52f-4426-947a-8595fac24671"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"53ab7fa0-a654-42a6-8af9-7f551c5705de"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"b2b0bd4a-d523-4e0d-99d4-1a873718f272"},{"d":"2026-03-28","n":"try_page_used","cat":"feature","u":"b2b0bd4a-d523-4e0d-99d4-1a873718f272"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"b2b0bd4a-d523-4e0d-99d4-1a873718f272"},{"d":"2026-03-28","n":"landing_page_view","cat":"onboarding","u":"3db4d7c3-58ad-40bc-9eb1-bdf3d14fb1c5"},{"d":"2026-03-28","n":"try_page_used","cat":"feature","u":"3db4d7c3-58ad-40bc-9eb1-bdf3d14fb1c5"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"a29e5741-941e-4ab2-bf9a-babe2bafb6c4"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"2bdcab95-39cc-4714-ba68-cfc96053ced1"},{"d":"2026-03-29","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"4f3363f9-e4be-4ab7-b0c7-810e8fe21d7c"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"39832066-e8ee-4f7f-8d1d-da4d93f48bbb"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"797da36c-cd1f-47b2-9761-a79b499e5686"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"903667f2-9761-4f4f-af95-663e8001c003"},{"d":"2026-03-29","n":"try_page_used","cat":"feature","u":"903667f2-9761-4f4f-af95-663e8001c003"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"5c3f40d8-8ffc-4258-9190-2d109d89e68b"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"842c0ea6-d052-4297-84c3-669d68274038"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"178daf03-d242-4a58-a3c7-68eb97765ae4"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"38f21d7a-e9f0-44b7-b733-bb221a8d07b9"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"54fc312c-9d24-4838-be91-bbcbf2ef8f2e"},{"d":"2026-03-29","n":"try_page_used","cat":"feature","u":"54fc312c-9d24-4838-be91-bbcbf2ef8f2e"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"865b3020-0570-4fc3-88b5-4267c2aa2dde"},{"d":"2026-03-29","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"free_practice_started","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"recording_started","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"recording_completed","cat":"recording","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"feedback_viewed","cat":"feedback","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"lesson_started","cat":"lesson","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"track_selected","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"f8550c7a-5a40-4fe6-af46-6ca307badf2a"},{"d":"2026-03-29","n":"try_page_used","cat":"feature","u":"f8550c7a-5a40-4fe6-af46-6ca307badf2a"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"d5e35f6d-0887-4f35-b2aa-e6ca99ae5d6a"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"bef99fb5-a9fa-46ce-b02e-b2cf8815a2d6"},{"d":"2026-03-29","n":"analytics_page_viewed","cat":"feature","u":"20e11f5d-453c-4e7f-ab6f-079042dd7629"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"7f23f786-1ce7-46bd-adb7-08d991de2197"},{"d":"2026-03-29","n":"try_page_used","cat":"feature","u":"7f23f786-1ce7-46bd-adb7-08d991de2197"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"7f23f786-1ce7-46bd-adb7-08d991de2197"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"000124de-07cf-41b3-ae58-e70293a3c359"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"dca19664-1848-40d4-ae52-0023cee4ea6f"},{"d":"2026-03-29","n":"landing_page_view","cat":"onboarding","u":"3d6854be-de0a-4e48-a01b-e4f1a8eb684b"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"e69c922a-9eb3-4b11-9503-60454c02e3b8"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"ff15d449-77bf-4fa9-ade4-bb68fffa4eb0"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"4ae3c41e-0928-496d-ad86-fc068f476933"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"8c81a777-c63c-40bc-a193-aba5d87444b3"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"f04d211c-f302-4fde-a10b-3eb2c8b66bef"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"af8cb2e6-fe18-417a-b8d4-3c9237a4d6b7"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"f84302bb-df3f-466b-aa16-e2bab9e32a91"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"f740d6d7-506c-4cc1-b659-6b1807e18140"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"e8812b4c-976c-4ed1-a0b4-6c7e19a4d5e9"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"39c4ddf8-8a7d-4c6a-83ac-fce8c16a68f9"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"f249e15d-7434-4c66-bfbc-306ac418f266"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"60f4b175-cdb4-4627-bac0-ac9a88e19ec2"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"af878ebc-59b0-4626-9594-566b1087cb08"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"6515fe43-1931-41d5-ac8a-cc0570f469c1"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"32144b10-955d-489e-b433-a18f5e8d00c1"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-30","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"082ed6ae-76c1-4d51-aa66-c2d626c1e5ce"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"3582c040-61db-465a-9db8-3eccf65842a9"},{"d":"2026-03-30","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"b798f0f8-f2ff-4416-8d64-f7e58e5eb902"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"d22a62ba-5097-48ce-afa5-0975267b02e1"},{"d":"2026-03-30","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-30","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-30","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"9921373a-1122-4c8a-96d4-c8fd0d45dcd2"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"ba92b590-f17a-4a40-9fd8-63540da9344f"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"7e876cdd-ca00-48bd-a68e-6fd678d719ed"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"24cc6654-dacf-4479-9875-531f44db3c9f"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"e74a2ecd-4ed8-441d-865c-05d38f60bec2"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"f67cbbe6-9982-47c3-94da-dc5e28b1a1f3"},{"d":"2026-03-31","n":"try_page_used","cat":"feature","u":"f67cbbe6-9982-47c3-94da-dc5e28b1a1f3"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"013f0d41-29ca-4d6d-b349-817b1e94c700"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"800e8fdc-b15f-422a-bab1-915f8ed6fe35"},{"d":"2026-03-31","n":"try_page_used","cat":"feature","u":"800e8fdc-b15f-422a-bab1-915f8ed6fe35"},{"d":"2026-03-31","n":"recording_started","cat":"recording","u":"800e8fdc-b15f-422a-bab1-915f8ed6fe35"},{"d":"2026-03-31","n":"recording_started","cat":"recording","u":"800e8fdc-b15f-422a-bab1-915f8ed6fe35"},{"d":"2026-03-31","n":"landing_page_view","cat":"onboarding","u":"c79bfb9f-9353-41b6-8ab6-9a86c80a1ceb"},{"d":"2026-03-31","n":"try_page_used","cat":"feature","u":"c79bfb9f-9353-41b6-8ab6-9a86c80a1ceb"},{"d":"2026-04-01","n":"landing_page_view","cat":"onboarding","u":"3307a2bc-611a-4fdb-9fde-29bb885777ce"},{"d":"2026-04-01","n":"landing_page_view","cat":"onboarding","u":"aacaed9a-9698-4f49-a8cd-2dc9df91aee0"},{"d":"2026-04-01","n":"landing_page_view","cat":"onboarding","u":"dc7389b6-55d0-459d-a3d0-9fbc384510d6"},{"d":"2026-04-01","n":"try_page_used","cat":"feature","u":"dc7389b6-55d0-459d-a3d0-9fbc384510d6"},{"d":"2026-04-01","n":"landing_page_view","cat":"onboarding","u":"dc7389b6-55d0-459d-a3d0-9fbc384510d6"},{"d":"2026-04-01","n":"landing_page_view","cat":"onboarding","u":"c3e5db51-f365-4f4b-b760-c4f8f4fddbdf"},{"d":"2026-04-01","n":"landing_page_view","cat":"onboarding","u":"a6f35237-b7b8-475e-8e73-4457179bdfd8"},{"d":"2026-04-02","n":"landing_page_view","cat":"onboarding","u":"d8d207e2-3979-46bf-a24b-a4be358bc380"},{"d":"2026-04-02","n":"landing_page_view","cat":"onboarding","u":"6f2ae97c-e0f0-4319-91d6-b3365f0c462b"},{"d":"2026-04-02","n":"landing_page_view","cat":"onboarding","u":"5376607c-389b-4280-b69e-59733b50e3c3"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"6f92228b-ee55-403a-acfe-f27c13257331"},{"d":"2026-04-03","n":"try_page_used","cat":"feature","u":"6f92228b-ee55-403a-acfe-f27c13257331"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"6f92228b-ee55-403a-acfe-f27c13257331"},{"d":"2026-04-03","n":"signup_page_view","cat":"onboarding","u":"6f92228b-ee55-403a-acfe-f27c13257331"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"6f92228b-ee55-403a-acfe-f27c13257331"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"0a8fb2f2-7e30-47a4-a626-fe247bc415b5"},{"d":"2026-04-03","n":"try_page_used","cat":"feature","u":"0a8fb2f2-7e30-47a4-a626-fe247bc415b5"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"0a8fb2f2-7e30-47a4-a626-fe247bc415b5"},{"d":"2026-04-03","n":"signup_page_view","cat":"onboarding","u":"0a8fb2f2-7e30-47a4-a626-fe247bc415b5"},{"d":"2026-04-03","n":"signup_complete","cat":"onboarding","u":"8b115b7c-0199-4d54-93a2-4a64adc0bbcb"},{"d":"2026-04-03","n":"dashboard_viewed","cat":"retention","u":"8b115b7c-0199-4d54-93a2-4a64adc0bbcb"},{"d":"2026-04-03","n":"onboarding_started","cat":"onboarding","u":"8b115b7c-0199-4d54-93a2-4a64adc0bbcb"},{"d":"2026-04-03","n":"onboarding_goals_selected","cat":"onboarding","u":"8b115b7c-0199-4d54-93a2-4a64adc0bbcb"},{"d":"2026-04-03","n":"onboarding_referral_selected","cat":"onboarding","u":"8b115b7c-0199-4d54-93a2-4a64adc0bbcb"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"57462b25-bce2-40d3-a066-51bdbcfacfbe"},{"d":"2026-04-03","n":"signup_page_view","cat":"onboarding","u":"57462b25-bce2-40d3-a066-51bdbcfacfbe"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"403499b9-aafe-4ad4-854c-44f6488bca11"},{"d":"2026-04-03","n":"signup_page_view","cat":"onboarding","u":"57462b25-bce2-40d3-a066-51bdbcfacfbe"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"ab15245b-7cd5-45ae-981c-15dfe738bb36"},{"d":"2026-04-03","n":"landing_page_view","cat":"onboarding","u":"9d2b9587-9643-4681-be3a-7fe8c5417adc"},{"d":"2026-04-04","n":"landing_page_view","cat":"onboarding","u":"e5a4c5e2-26b5-496c-b879-32bfe07b87c6"},{"d":"2026-04-04","n":"signup_page_view","cat":"onboarding","u":"3c5fbcc0-28e5-4141-a134-474d7b8903fb"},{"d":"2026-04-04","n":"landing_page_view","cat":"onboarding","u":"cf84579e-4f63-41e4-8838-31245c964eab"},{"d":"2026-04-04","n":"landing_page_view","cat":"onboarding","u":"258f76e6-ec63-40f5-87c9-249870bacc32"},{"d":"2026-04-04","n":"landing_page_view","cat":"onboarding","u":"a9dbfdcc-2efe-4dba-967e-f5b7790190f1"},{"d":"2026-04-04","n":"landing_page_view","cat":"onboarding","u":"80ae7e99-9985-4c17-b2a6-69fc7d533d85"},{"d":"2026-04-04","n":"landing_page_view","cat":"onboarding","u":"cf333d75-92f3-4b35-95ad-0c1bf50a6131"},{"d":"2026-04-04","n":"landing_page_view","cat":"onboarding","u":"3e4e3ee6-8d3d-475c-accb-c6d8410edec5"},{"d":"2026-04-05","n":"landing_page_view","cat":"onboarding","u":"06e97dfb-d029-4543-8aab-0fa38b8a49f9"},{"d":"2026-04-05","n":"landing_page_view","cat":"onboarding","u":"b223bc4a-8bda-4809-b18b-f994eb95289e"},{"d":"2026-04-05","n":"landing_page_view","cat":"onboarding","u":"aef4c82b-ecdf-40de-8f80-986654b9ff09"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"eea141ef-e401-4d45-b6ff-73b63a0f6fff"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"eea141ef-e401-4d45-b6ff-73b63a0f6fff"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"3dfba7c7-55e2-406f-9f79-671224a2acae"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"7e2e7bbe-2755-4ba1-adce-83609e1324d1"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"430507b5-efcb-4929-8491-e68e6774439d"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"894c8c0f-4848-42a7-8b96-3eeaf0582bf0"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"5afe6e46-54fb-4345-8a68-74c82dd14e35"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"c6b071c5-782e-47ee-aa4f-e6f91c53227d"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"97c151e7-878d-4df5-bbe1-aa0966e85cd7"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"0abf2fc3-dc37-47c0-8912-7f35853a71f4"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"6bfafc5b-8334-4f3f-b58d-395b0e2f9958"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"9c159206-30a9-4ca0-8089-5b123332a7a0"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"8a28a682-a642-4ea9-9e82-8aa611acadb2"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"e5a32087-3483-4c85-bf04-a429c8c0f5a3"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"36d76668-6d37-437a-8aa2-34a9c041ecf9"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"3faf3dee-0c9c-4b06-9374-1585f11715fd"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"1f518d63-c399-4970-9df5-4c3c36046075"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"6a517b8e-79f7-4f23-b294-c64884ef9d85"},{"d":"2026-04-06","n":"landing_page_view","cat":"onboarding","u":"00ac2506-67fd-4319-9f7d-31b3c14a81fb"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"4915e056-13d0-4c19-935a-ec7c16161b79"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"3d7a2139-a5a6-452c-bed0-b45fc69405a7"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"d7df7886-1317-4851-9251-e9373d0d3068"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"8c738b87-e664-46fe-af95-6f90a609aaa9"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"fd0e5861-8613-41f6-be55-bc18e8034051"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"f5d15b9e-b51a-4207-a8ef-ab25bfa42798"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"b7fcce23-2c31-4f11-a360-0cb78e112522"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"39525aca-9a2a-40d2-a0a2-e09a0258cfa9"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"1813fad1-6161-4727-beaa-351b23368302"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"ecf1b747-75de-4c65-9328-c363dec37265"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"d1a58e9a-4c23-49ea-83d5-1f926437adb5"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"d9ff23d4-f477-4592-a72d-fa88d9048aa8"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"35745423-9e13-479f-941b-6344d1af1cf2"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"843033da-86fe-4b34-ab0c-6c6771e3dc08"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e5c82c71-9079-4a50-8a59-059d1b19e1e1"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"8a454ace-3090-477c-b666-95bd4a4fa26a"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"456f6f71-5614-4764-bcc0-d7377ab4ef01"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"b42819e7-d41b-4c19-8ebb-7467b19bf64a"},{"d":"2026-04-07","n":"try_page_used","cat":"feature","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"signup_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"c3efcbe9-8a98-4b75-a9d4-4e2abbe837e2"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"972d34c8-0017-4e12-ab46-0bda5ff4fd08"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"89e904a1-d274-4b49-b667-18d36cb67209"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"eac4a448-3395-4d21-98eb-ccdfcf999a7c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"ecf1c8b8-ac0f-4620-ad41-62d265a1e337"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"04abd280-ec56-43f5-8509-a96c719f4463"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"363b6ed9-a4e3-4a29-84f7-3e2e21c86678"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"e35f62dc-708a-49b8-9d42-59d56e68224c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"d03cb50d-6a6a-4558-ab67-c3c9cc55affe"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"b45f21d4-46b2-453f-b776-c7d1479a9c11"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"dedf265c-191c-4b81-880a-d205034785d7"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"be106128-90fb-4d86-a7d0-14143c5a944e"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"1db20578-b09a-44a4-926e-a083d36a11ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"4339b0e1-0fde-411b-8fae-d7e5856f0aaa"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"14ad9bdb-feb5-4c1f-9f8e-7ea420e11df9"},{"d":"2026-04-07","n":"login_complete","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"onboarding_started","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"onboarding_goals_selected","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"onboarding_referral_selected","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"onboarding_mic_intro_completed","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"onboarding_diagnostic_skipped","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"analytics_page_viewed","cat":"feature","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"dashboard_viewed","cat":"retention","u":"c028f634-35f0-4927-9dcc-9b2c194cdc8f"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"a825819b-f1b5-4730-8fe3-47f190125942"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"99e0a65e-05e7-4a30-b6eb-2dbf6a981c54"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"1e1f4c21-42f9-453e-959b-770f7b408f98"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"128f6f64-4628-4a06-ba54-1c0ee3c6f22d"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"aa81a0e2-510f-40ca-bd52-e514899d03ca"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"f152c964-9dbf-4660-adc0-b6809dd7cdf9"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"8528f5ee-37da-43d1-ba04-f550d8be086f"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"4b1c055f-2866-4574-b492-4b8d7ec7bdb3"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"442ec0d1-1e07-43d4-ad0d-ec031368015f"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"59dbb64a-057d-4471-a309-3da7f1559987"},{"d":"2026-04-07","n":"signup_page_view","cat":"onboarding","u":"59dbb64a-057d-4471-a309-3da7f1559987"},{"d":"2026-04-07","n":"signup_complete","cat":"onboarding","u":"45dd4730-4690-498e-a708-76d4de9de5fb"},{"d":"2026-04-07","n":"dashboard_viewed","cat":"retention","u":"45dd4730-4690-498e-a708-76d4de9de5fb"},{"d":"2026-04-07","n":"onboarding_started","cat":"onboarding","u":"45dd4730-4690-498e-a708-76d4de9de5fb"},{"d":"2026-04-07","n":"onboarding_goals_selected","cat":"onboarding","u":"45dd4730-4690-498e-a708-76d4de9de5fb"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"30240720-c9a1-4a5d-a886-f68f3741f1ab"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"9b071aa1-0649-4b39-92c0-3afc027a0462"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"bfa1def0-3ae0-44fa-90b5-55f2cec7c155"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"232e9680-cd62-43df-9ab1-8da267d3b110"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"1f078bbf-8ddf-4485-b6a6-7e724c2ca8c3"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"232e9680-cd62-43df-9ab1-8da267d3b110"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"c9d6ddc3-deed-45c5-91b6-23d284412e0c"},{"d":"2026-04-07","n":"try_page_used","cat":"feature","u":"1f078bbf-8ddf-4485-b6a6-7e724c2ca8c3"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"1f078bbf-8ddf-4485-b6a6-7e724c2ca8c3"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"c9d6ddc3-deed-45c5-91b6-23d284412e0c"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"1f078bbf-8ddf-4485-b6a6-7e724c2ca8c3"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"70c8de68-7e95-4a06-88a0-cc3e6f44e878"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"dacd3638-aaa2-4e41-849f-98912a546327"},{"d":"2026-04-07","n":"signup_page_view","cat":"onboarding","u":"dacd3638-aaa2-4e41-849f-98912a546327"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"dacd3638-aaa2-4e41-849f-98912a546327"},{"d":"2026-04-07","n":"try_page_used","cat":"feature","u":"dacd3638-aaa2-4e41-849f-98912a546327"},{"d":"2026-04-07","n":"landing_page_view","cat":"onboarding","u":"dacd3638-aaa2-4e41-849f-98912a546327"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"457fda43-67bb-4949-8371-4909ef8101be"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"818ba4d8-9c18-4d10-a04a-0a015ca1fae1"},{"d":"2026-04-08","n":"try_page_used","cat":"feature","u":"818ba4d8-9c18-4d10-a04a-0a015ca1fae1"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"818ba4d8-9c18-4d10-a04a-0a015ca1fae1"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"8a639946-3b62-4d73-bcd5-be504dc7890e"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"4918002c-524f-4e2f-9ed0-f8235dea1bc2"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"31c46c0d-f803-4939-95b8-d05f0bcf14fc"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"e387c261-7dbc-4fe7-b83f-15d2e5ad33c2"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"d30409e6-1fef-4951-b722-633f6a54a773"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"a2c03a61-e0dc-42d4-910b-94e7e2190a7f"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"f5d37d12-9b4d-40b4-98f3-01ac9f567aaf"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"9e5cc924-ebe6-4f43-9ea9-28373be364aa"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"7daaa893-034a-45bb-98f1-a204563e3cec"},{"d":"2026-04-08","n":"try_page_used","cat":"feature","u":"7daaa893-034a-45bb-98f1-a204563e3cec"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"f854a9c8-baca-4bd7-83b8-3828266e95c1"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"7ca211d1-d2b3-4a57-a13e-68cb0d6dd8df"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"7dc0ccab-f639-41d1-a39e-e1ba74fd81ff"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"9364a787-229b-4da8-b502-9585d5dfbedc"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"dce0376d-52f1-481c-839e-613ba54445bb"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"c97ff441-f980-4c38-8fd5-bcdbf1bee5f3"},{"d":"2026-04-08","n":"landing_page_view","cat":"onboarding","u":"caa43ab7-9a2b-43b4-a5c5-60b389afaec9"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"4f15b705-39ce-473d-91c9-3137ee4d103f"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"773b3e12-2fdb-427f-b813-590af6f1a5b3"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"bcc27840-c1f4-4d83-8a7c-2e67a9c5c999"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"a48ecafd-5bb8-497e-87b7-f512807ec76a"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"30c00fd4-874e-4ba3-8354-990e0b387d03"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"b5834a86-4476-485d-a628-70eb79482956"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"27a89d83-7ef7-48af-a52a-693beb505afe"},{"d":"2026-04-09","n":"try_page_used","cat":"feature","u":"7daaa893-034a-45bb-98f1-a204563e3cec"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"3ff53c84-4d3e-4a0b-9e06-c528051860bc"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"54e9617e-32fb-4dbc-ad2f-99f8e63d188c"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"54e9617e-32fb-4dbc-ad2f-99f8e63d188c"},{"d":"2026-04-09","n":"try_page_used","cat":"feature","u":"7daaa893-034a-45bb-98f1-a204563e3cec"},{"d":"2026-04-09","n":"landing_page_view","cat":"onboarding","u":"53538afb-40e4-4c60-80c9-2584cb63a569"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"82879780-a05d-4fe9-b444-461a2c08fc34"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"57bacd11-7dfd-41f4-b3ed-1a450fc2b5ba"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"04289cf2-6692-4343-a990-f04189ee01e8"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"04289cf2-6692-4343-a990-f04189ee01e8"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"59cda35d-8178-4b21-b207-098a5961b5b7"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"157bc705-eff5-4a3d-9b3e-b2ebedb8e1a7"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"f79ff5a1-e5a5-4a9d-9932-108f2168d34c"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"172cdf30-7dd4-4f76-9dca-9f3639bd4600"},{"d":"2026-04-10","n":"landing_page_view","cat":"onboarding","u":"c2a10633-15f1-49a6-865c-817aba61d7e9"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"d024f34e-fa19-4fbf-be69-a6de2bf3401c"},{"d":"2026-04-11","n":"try_page_used","cat":"feature","u":"d024f34e-fa19-4fbf-be69-a6de2bf3401c"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"d024f34e-fa19-4fbf-be69-a6de2bf3401c"},{"d":"2026-04-11","n":"signup_page_view","cat":"onboarding","u":"d024f34e-fa19-4fbf-be69-a6de2bf3401c"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"1d4d082e-fe21-451d-b5b3-9c0fb47cfbd3"},{"d":"2026-04-11","n":"try_page_used","cat":"feature","u":"1d4d082e-fe21-451d-b5b3-9c0fb47cfbd3"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"1d4d082e-fe21-451d-b5b3-9c0fb47cfbd3"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"1d4d082e-fe21-451d-b5b3-9c0fb47cfbd3"},{"d":"2026-04-11","n":"signup_page_view","cat":"onboarding","u":"1d4d082e-fe21-451d-b5b3-9c0fb47cfbd3"},{"d":"2026-04-11","n":"signup_page_view","cat":"onboarding","u":"1d4d082e-fe21-451d-b5b3-9c0fb47cfbd3"},{"d":"2026-04-11","n":"signup_complete","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"dashboard_viewed","cat":"retention","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"onboarding_started","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"onboarding_goals_selected","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"onboarding_referral_selected","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"onboarding_mic_intro_completed","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"onboarding_mic_intro_completed","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_completed","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"feedback_viewed","cat":"feedback","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"onboarding_diagnostic_completed","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"onboarding_complete","cat":"onboarding","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"dashboard_viewed","cat":"retention","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"free_practice_started","cat":"feature","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_completed","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"feedback_viewed","cat":"feedback","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_completed","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"feedback_viewed","cat":"feedback","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_completed","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"feedback_viewed","cat":"feedback","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"recording_completed","cat":"recording","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"feedback_viewed","cat":"feedback","u":"6752a90b-6337-4c7e-ac9b-d6488844797a"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"7f79a31a-0cc4-4b30-a019-64d2a06d8c3e"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"26535191-661d-4281-b88f-211bfcc17c0d"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"6c1852e7-3ceb-41cb-a58e-8a01d79ad0e7"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"729041ae-1839-4327-9946-6188a87ebf10"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"0442ee6c-99e3-45ec-8c41-337bf002efa0"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"d721210f-3e0f-46f8-863b-23b65119b7b2"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"b3b6fdf5-e6e3-43c0-83b2-a7d067a18313"},{"d":"2026-04-11","n":"try_page_used","cat":"feature","u":"b3b6fdf5-e6e3-43c0-83b2-a7d067a18313"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"b3b6fdf5-e6e3-43c0-83b2-a7d067a18313"},{"d":"2026-04-11","n":"signup_page_view","cat":"onboarding","u":"b3b6fdf5-e6e3-43c0-83b2-a7d067a18313"},{"d":"2026-04-11","n":"signup_complete","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"dashboard_viewed","cat":"retention","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_started","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_started","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_goals_selected","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_referral_selected","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"dashboard_viewed","cat":"retention","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_started","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"free_practice_started","cat":"feature","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_started","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"dashboard_viewed","cat":"retention","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_started","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_goals_selected","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_referral_selected","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_mic_intro_completed","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"recording_started","cat":"recording","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"recording_completed","cat":"recording","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"feedback_viewed","cat":"feedback","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"onboarding_diagnostic_completed","cat":"onboarding","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"track_selected","cat":"feature","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"lesson_started","cat":"lesson","u":"9f4e14c5-12e6-45f3-a30f-c59342ee6924"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"6a362e31-fff0-4c44-9ef8-aad570351db6"},{"d":"2026-04-11","n":"try_page_used","cat":"feature","u":"ecfecd58-c0e2-4c52-ac24-9e6ecb5931d6"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"ecfecd58-c0e2-4c52-ac24-9e6ecb5931d6"},{"d":"2026-04-11","n":"landing_page_view","cat":"onboarding","u":"67edd1b5-1c78-4edd-9cfd-9d03b586a2d1"},{"d":"2026-04-12","n":"landing_page_view","cat":"onboarding","u":"bb000036-1782-4c3d-805c-cbf53fd923f4"},{"d":"2026-04-12","n":"try_page_used","cat":"feature","u":"bb000036-1782-4c3d-805c-cbf53fd923f4"},{"d":"2026-04-12","n":"recording_started","cat":"recording","u":"bb000036-1782-4c3d-805c-cbf53fd923f4"},{"d":"2026-04-12","n":"signup_page_view","cat":"onboarding","u":"bb000036-1782-4c3d-805c-cbf53fd923f4"},{"d":"2026-04-12","n":"signup_complete","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"dashboard_viewed","cat":"retention","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_started","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_goals_selected","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_referral_selected","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_mic_intro_completed","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"recording_started","cat":"recording","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"recording_completed","cat":"recording","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"feedback_viewed","cat":"feedback","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_diagnostic_completed","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"dashboard_viewed","cat":"retention","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_started","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_started","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"onboarding_started","cat":"onboarding","u":"6c3e4125-bab3-43f8-ba4c-db4fb8646a27"},{"d":"2026-04-12","n":"landing_page_view","cat":"onboarding","u":"4d0191c9-73ac-4292-9d5e-2d561e45fda3"},{"d":"2026-04-12","n":"landing_page_view","cat":"onboarding","u":"3f579553-3005-4d58-9201-a75f82fa3e5d"},{"d":"2026-04-12","n":"landing_page_view","cat":"onboarding","u":"f5ac9456-9130-4c13-8cf6-33752b2462bf"}];
 
-    const PALETTE = [C.blue, C.green, C.purple, C.orange, C.red, C.cyan, C.pink];
+// ── State ──
+let currentDays = 30;
 
-    function baseScales(yTitle) {
-      return {
-        x: { grid: { color: C.grid, drawBorder: false }, ticks: { color: C.text, maxRotation: 45, font: { size: 11 } } },
-        y: { beginAtZero: true, grid: { color: C.grid, drawBorder: false }, ticks: { color: C.text, font: { size: 11 } }, title: yTitle ? { display: true, text: yTitle, color: C.text, font: { size: 11 } } : undefined },
-      };
-    }
+// ── Theme ──
+function toggleTheme() {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('su-theme', t);
+  document.getElementById('theme-btn').innerHTML = t === 'dark' ? '\u263D' : '\u2600';
+  render();
+}
+(function() {
+  const s = localStorage.getItem('su-theme');
+  if (s === 'light') { document.documentElement.setAttribute('data-theme', 'light'); document.getElementById('theme-btn').innerHTML = '\u2600'; }
+})();
 
-    // No traffic data yet
+// ── Period controls ──
+document.getElementById('period-controls').addEventListener('click', e => {
+  const btn = e.target.closest('.pill');
+  if (!btn) return;
+  document.querySelectorAll('#period-controls .pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDays = parseInt(btn.dataset.days);
+  render();
+});
 
-    
-    // ── Daily Active Users ──
-    allCharts.push(new Chart(document.getElementById('dailyDAU'), {
+// ── Helpers ──
+function getStyle(prop) { return getComputedStyle(document.documentElement).getPropertyValue(prop).trim(); }
+function daysSince(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  return Math.floor((today - d) / 86400000);
+}
+function dateRange(days) {
+  const arr = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    arr.push(d.toISOString().slice(0, 10));
+  }
+  return arr;
+}
+function fmtDate(d) {
+  const [,m,day] = d.split('-');
+  const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(m)] + ' ' + parseInt(day);
+}
+function fmtEvent(n) { return n.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
+function topN(obj, n) { return Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, n); }
+function isMobile(ua) {
+  if (/mobile|android.*mobile|iphone|ipod/i.test(ua)) return 'Mobile';
+  if (/tablet|ipad|android(?!.*mobile)/i.test(ua)) return 'Tablet';
+  return 'Desktop';
+}
+function getBrowser(ua) {
+  if (/edg\//i.test(ua)) return 'Edge';
+  if (/chrome|crios/i.test(ua)) return 'Chrome';
+  if (/firefox|fxios/i.test(ua)) return 'Firefox';
+  if (/safari/i.test(ua) && !/chrome/i.test(ua)) return 'Safari';
+  return 'Other';
+}
+function classifyReferrer(ref) {
+  if (!ref) return 'Direct';
+  try {
+    const h = new URL(ref).hostname.toLowerCase();
+    if (h.includes('speakupcoach.com')) return 'Direct';
+    if (h.includes('google')) return 'Google';
+    if (h.includes('instagram') || h.includes('ig.')) return 'Instagram';
+    if (h.includes('facebook') || h.includes('fb.')) return 'Facebook';
+    if (h.includes('twitter') || h.includes('t.co') || h.includes('x.com')) return 'X / Twitter';
+    if (h.includes('linkedin')) return 'LinkedIn';
+    if (h.includes('tiktok')) return 'TikTok';
+    if (h.includes('youtube')) return 'YouTube';
+    if (h.includes('reddit')) return 'Reddit';
+    if (h.includes('bing')) return 'Bing';
+    return h;
+  } catch { return 'Other'; }
+}
+
+// ── Chart management ──
+const charts = {};
+function makeChart(id, config) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  charts[id] = new Chart(canvas, config);
+}
+
+// ── Source list builder ──
+function sourceListHTML(items, color) {
+  if (items.length === 0) return '<div class="empty">No data yet</div>';
+  const max = items[0][1];
+  return '<ul class="source-list">' + items.map(([name, count]) => {
+    const pct = Math.max((count / max) * 100, 4);
+    return '<li class="source-item"><span class="source-name">' + name + '</span><div class="source-bar-wrap"><div class="source-bar" style="width:' + pct + '%;background:' + color + '"></div></div><span class="source-count">' + count.toLocaleString() + '</span></li>';
+  }).join('') + '</ul>';
+}
+
+// ── Main render ──
+function render() {
+  const days = dateRange(currentDays);
+  const pv = PV.filter(r => daysSince(r.d) < currentDays);
+  const ev = EV.filter(r => daysSince(r.d) < currentDays);
+
+  const C = {
+    blue: getStyle('--blue'), green: getStyle('--green'), purple: getStyle('--purple'),
+    orange: getStyle('--orange'), red: getStyle('--red'), cyan: getStyle('--cyan'), pink: getStyle('--pink'),
+    text: getStyle('--text2'), grid: getStyle('--border'),
+  };
+  const PALETTE = [C.blue, C.green, C.purple, C.orange, C.red, C.cyan, C.pink];
+
+  Chart.defaults.color = C.text;
+  Chart.defaults.borderColor = C.grid;
+
+  // ── Compute stats ──
+  const totalViews = pv.length;
+  const uniqueVisitors = new Set(pv.map(r => r.v || (r.ua + '|' + r.c))).size;
+
+  // Bounce rate: visitors who viewed only 1 page
+  const visitorPages = {};
+  pv.forEach(r => {
+    const vid = r.v || (r.ua + '|' + r.c);
+    if (!visitorPages[vid]) visitorPages[vid] = new Set();
+    visitorPages[vid].add(r.d + r.p); // unique page per day
+  });
+  const totalSessions = Object.keys(visitorPages).length;
+  const bouncedSessions = Object.values(visitorPages).filter(s => s.size === 1).length;
+  const bounceRate = totalSessions > 0 ? Math.round((bouncedSessions / totalSessions) * 100) : 0;
+
+  // Daily views/visitors
+  const dailyViews = {};
+  const dailyVisitors = {};
+  pv.forEach(r => {
+    dailyViews[r.d] = (dailyViews[r.d] || 0) + 1;
+    if (!dailyVisitors[r.d]) dailyVisitors[r.d] = new Set();
+    dailyVisitors[r.d].add(r.v || (r.ua + '|' + r.c));
+  });
+
+  // Behavior stats
+  const evCounts = {};
+  ev.forEach(r => { evCounts[r.n] = (evCounts[r.n] || 0) + 1; });
+  const recStarted = evCounts['recording_started'] || 0;
+  const recCompleted = evCounts['recording_completed'] || 0;
+  const lesStarted = evCounts['lesson_started'] || 0;
+  const lesCompleted = evCounts['lesson_completed'] || 0;
+
+  // ── Stats row ──
+  const hasPV = pv.length > 0;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat"><div class="lbl">Visitors</div><div class="val">${hasPV ? uniqueVisitors.toLocaleString() : '--'}</div><div class="sub">${hasPV ? 'Unique visitors' : 'Collecting...'}</div></div>
+    <div class="stat"><div class="lbl">Page Views</div><div class="val">${hasPV ? totalViews.toLocaleString() : '--'}</div><div class="sub">${hasPV ? (totalViews / currentDays).toFixed(1) + '/day avg' : 'Collecting...'}</div></div>
+    <div class="stat"><div class="lbl">Bounce Rate</div><div class="val">${hasPV ? bounceRate + '%' : '--'}</div><div class="sub">${hasPV ? bouncedSessions + ' of ' + totalSessions + ' sessions' : 'Collecting...'}</div></div>
+    <div class="stat"><div class="lbl">Recordings</div><div class="val">${recStarted > 0 ? recCompleted + '/' + recStarted : '--'}</div><div class="sub">${recStarted > 0 ? Math.round(recCompleted/recStarted*100) + '% completed' : 'No recordings'}</div></div>
+    <div class="stat"><div class="lbl">Lessons</div><div class="val">${lesStarted > 0 ? lesCompleted + '/' + lesStarted : '--'}</div><div class="sub">${lesStarted > 0 ? Math.round(lesCompleted/lesStarted*100) + '% completed' : 'No lessons'}</div></div>
+  `;
+
+  // ── Traffic charts ──
+  const labels = days.map(fmtDate);
+  // Thin labels: show every Nth label
+  const labelInterval = currentDays <= 7 ? 1 : currentDays <= 30 ? 3 : 7;
+
+  document.getElementById('traffic-grid').innerHTML = `
+    <div class="card"><h3>Page Views & Visitors</h3><div class="cw h240"><canvas id="c-daily"></canvas></div></div>
+    <div class="card"><h3>Top Pages</h3><div class="cw h280"><canvas id="c-pages"></canvas></div></div>
+  `;
+
+  if (hasPV) {
+    makeChart('c-daily', {
       type: 'line',
       data: {
-        labels: ["Mar 14","Mar 15","Mar 16","Mar 17","Mar 18","Mar 19","Mar 20","Mar 21","Mar 22","Mar 23","Mar 24","Mar 25","Mar 26","Mar 27","Mar 28","Mar 29","Mar 30","Mar 31","Apr 1","Apr 2","Apr 3","Apr 4","Apr 5","Apr 6","Apr 7","Apr 8","Apr 9","Apr 10","Apr 11","Apr 12"],
-        datasets: [{
-          label: 'Active Users',
-          data: [0,0,0,31,11,11,16,3,6,9,16,3,4,5,13,21,20,9,5,3,7,8,3,19,53,18,11,8,14,5],
-          borderColor: C.green,
-          backgroundColor: C.green + '18',
-          fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5
-        }]
+        labels,
+        datasets: [
+          { label: 'Views', data: days.map(d => dailyViews[d] || 0), borderColor: C.blue, backgroundColor: C.blue + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
+          { label: 'Visitors', data: days.map(d => dailyVisitors[d] ? dailyVisitors[d].size : 0), borderColor: C.green, backgroundColor: C.green + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
+        ],
       },
-      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false } }, scales: baseScales('Users') }
-    }));
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 14, font: { size: 11 } } } },
+        scales: {
+          x: { grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 }, maxRotation: 0, callback: (v,i) => i % labelInterval === 0 ? labels[i] : '' } },
+          y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 } } },
+        },
+      },
+    });
 
-    // ── Event Categories ──
-    allCharts.push(new Chart(document.getElementById('eventCategories'), {
+    const pageCounts = {};
+    pv.forEach(r => { pageCounts[r.p] = (pageCounts[r.p] || 0) + 1; });
+    const topPages = topN(pageCounts, 10);
+
+    makeChart('c-pages', {
       type: 'bar',
       data: {
-        labels: ["Onboarding","Retention","Feature","Lesson","Recording","Feedback","Mobile"],
-        datasets: [{ data: [548,80,94,17,41,15,33], backgroundColor: PALETTE.slice(0, 7).map(c => c + 'cc'), borderRadius: 4 }]
+        labels: topPages.map(p => p[0]),
+        datasets: [{ data: topPages.map(p => p[1]), backgroundColor: C.blue + 'cc', borderRadius: 4, barThickness: 20 }],
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: baseScales('Events') }
-    }));
-    
-  </script>
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw.toLocaleString() + ' views' } } },
+        scales: { x: { grid: { color: C.grid }, ticks: { color: C.text } }, y: { grid: { display: false }, ticks: { color: C.text, font: { size: 11 } } } },
+      },
+    });
+  }
+
+  // ── Sources ──
+  const referrerCounts = {};
+  const utmSourceCounts = {};
+  const countryCounts = {};
+  pv.forEach(r => {
+    const src = classifyReferrer(r.r);
+    referrerCounts[src] = (referrerCounts[src] || 0) + 1;
+    if (r.us) utmSourceCounts[r.us] = (utmSourceCounts[r.us] || 0) + 1;
+    if (r.c) countryCounts[r.c] = (countryCounts[r.c] || 0) + 1;
+  });
+
+  document.getElementById('sources-grid').innerHTML = `
+    <div class="card"><h3>Referrers</h3>${hasPV ? sourceListHTML(topN(referrerCounts, 10), C.blue) : '<div class="empty">No data yet</div>'}</div>
+    <div class="card"><h3>UTM Sources</h3>${hasPV && Object.keys(utmSourceCounts).length > 0 ? sourceListHTML(topN(utmSourceCounts, 10), C.purple) : '<div class="empty">' + (hasPV ? 'No UTM-tagged traffic yet' : 'No data yet') + '</div>'}</div>
+    <div class="card"><h3>Countries</h3>${hasPV && Object.keys(countryCounts).length > 0 ? sourceListHTML(topN(countryCounts, 10), C.cyan) : '<div class="empty">No data yet</div>'}</div>
+  `;
+
+  // ── Devices & browsers (only if data) ──
+  const deviceCounts = {};
+  const browserCounts = {};
+  pv.forEach(r => {
+    if (r.ua) {
+      const dev = isMobile(r.ua);
+      deviceCounts[dev] = (deviceCounts[dev] || 0) + 1;
+      const br = getBrowser(r.ua);
+      browserCounts[br] = (browserCounts[br] || 0) + 1;
+    }
+  });
+
+  // ── Behavior section ──
+  const hasEV = ev.length > 0;
+  const dailyActiveUsers = {};
+  ev.forEach(r => {
+    if (!dailyActiveUsers[r.d]) dailyActiveUsers[r.d] = new Set();
+    dailyActiveUsers[r.d].add(r.u);
+  });
+
+  const funnel = [
+    ['Landing Page', evCounts['landing_page_view'] || 0],
+    ['Signup Page', evCounts['signup_page_view'] || 0],
+    ['Signup Complete', evCounts['signup_complete'] || 0],
+    ['Onboarding Done', evCounts['onboarding_complete'] || 0],
+  ];
+  const funnelMax = Math.max(funnel[0][1], 1);
+
+  const catCounts = {};
+  ev.forEach(r => { catCounts[r.cat] = (catCounts[r.cat] || 0) + 1; });
+
+  const topEvents = topN(evCounts, 15);
+
+  let behaviorHTML = '';
+
+  if (hasPV) {
+    behaviorHTML += '<div class="grid"><div class="card"><h3>Devices</h3><div class="cw h200"><canvas id="c-devices"></canvas></div></div><div class="card"><h3>Browsers</h3><div class="cw h200"><canvas id="c-browsers"></canvas></div></div></div>';
+  }
+
+  if (hasEV) {
+    const funnelBars = funnel.map(([label, count], i) => {
+      const pct = Math.max((count / funnelMax) * 100, 8);
+      const conv = i > 0 && funnel[i-1][1] > 0 ? ' (' + Math.round(count / funnel[i-1][1] * 100) + '%)' : '';
+      return '<div class="fs"><span class="fl">' + label + '</span><div class="fb" style="width:' + pct + '%">' + count + conv + '</div></div>';
+    }).join('');
+
+    behaviorHTML += `
+      <div class="grid g1"><div class="card"><h3>Signup Funnel</h3><div class="funnel">${funnelBars}</div></div></div>
+      <div class="grid">
+        <div class="card"><h3>Daily Active Users</h3><div class="cw h240"><canvas id="c-dau"></canvas></div></div>
+        <div class="card"><h3>Events by Category</h3><div class="cw h240"><canvas id="c-cats"></canvas></div></div>
+      </div>
+      <div class="grid g1"><div class="card"><h3>Top Events</h3>
+        <table><thead><tr><th>Event</th><th>Count</th></tr></thead><tbody>
+          ${topEvents.map(([n, c]) => '<tr><td>' + fmtEvent(n) + '</td><td class="n">' + c.toLocaleString() + '</td></tr>').join('')}
+        </tbody></table>
+      </div></div>
+    `;
+  } else {
+    behaviorHTML += '<div class="grid g1"><div class="card"><div class="empty">No user behavior events in this period.</div></div></div>';
+  }
+
+  document.getElementById('behavior-section').innerHTML = behaviorHTML;
+
+  // Render charts that depend on behavior section DOM
+  if (hasPV && Object.values(deviceCounts).some(v => v > 0)) {
+    const filteredDevices = Object.entries(deviceCounts).filter(([,v]) => v > 0);
+    makeChart('c-devices', {
+      type: 'doughnut',
+      data: { labels: filteredDevices.map(d => d[0]), datasets: [{ data: filteredDevices.map(d => d[1]), backgroundColor: [C.blue, C.green, C.purple], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } },
+    });
+  }
+  if (hasPV && Object.keys(browserCounts).length > 0) {
+    makeChart('c-browsers', {
+      type: 'doughnut',
+      data: { labels: Object.keys(browserCounts), datasets: [{ data: Object.values(browserCounts), backgroundColor: PALETTE.slice(0, Object.keys(browserCounts).length), borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } },
+    });
+  }
+
+  if (hasEV) {
+    makeChart('c-dau', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{ label: 'Users', data: days.map(d => dailyActiveUsers[d] ? dailyActiveUsers[d].size : 0), borderColor: C.green, backgroundColor: C.green + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 }, maxRotation: 0, callback: (v,i) => i % labelInterval === 0 ? labels[i] : '' } },
+          y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 } } },
+        },
+      },
+    });
+
+    makeChart('c-cats', {
+      type: 'bar',
+      data: {
+        labels: Object.keys(catCounts).map(fmtEvent),
+        datasets: [{ data: Object.values(catCounts), backgroundColor: PALETTE.slice(0, Object.keys(catCounts).length).map(c => c + 'cc'), borderRadius: 4 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false }, ticks: { color: C.text, font: { size: 10 } } }, y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.text } } },
+      },
+    });
+  }
+}
+
+// Initial render
+render();
+</script>
 </body>
 </html>

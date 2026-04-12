@@ -20,7 +20,8 @@ const db = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const DAYS = 30;
+// Fetch 90 days so client-side filtering can do 7d/30d/90d
+const FETCH_DAYS = 90;
 
 function daysAgo(n) {
   const d = new Date();
@@ -28,198 +29,67 @@ function daysAgo(n) {
   return d.toISOString();
 }
 
-async function fetchPageViews() {
-  const since = daysAgo(DAYS);
-  const { data, error } = await db
-    .from('page_views')
-    .select('path, referrer, user_agent, country, created_at')
-    .gte('created_at', since)
-    .order('created_at', { ascending: true });
-  if (error) throw new Error(`page_views query failed: ${error.message}`);
-  return data || [];
-}
-
-async function fetchAnalyticsEvents() {
-  const since = daysAgo(DAYS);
-  const { data, error } = await db
-    .from('analytics_events')
-    .select('event_name, event_category, properties, created_at, session_id, user_id')
-    .gte('created_at', since)
-    .order('created_at', { ascending: true });
-  if (error) throw new Error(`analytics_events query failed: ${error.message}`);
-  return data || [];
-}
-
-function dateKey(iso) { return iso.slice(0, 10); }
-
-function isMobile(ua) {
-  if (/mobile|android.*mobile|iphone|ipod/i.test(ua)) return 'Mobile';
-  if (/tablet|ipad|android(?!.*mobile)/i.test(ua)) return 'Tablet';
-  return 'Desktop';
-}
-
-function getBrowser(ua) {
-  if (/edg\//i.test(ua)) return 'Edge';
-  if (/chrome|crios/i.test(ua)) return 'Chrome';
-  if (/firefox|fxios/i.test(ua)) return 'Firefox';
-  if (/safari/i.test(ua) && !/chrome/i.test(ua)) return 'Safari';
-  if (/opera|opr/i.test(ua)) return 'Opera';
-  return 'Other';
-}
-
-function topN(counts, n) {
-  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, n);
-}
-
-function getAllDays() {
-  const allDays = [];
-  for (let i = DAYS - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    allDays.push(d.toISOString().slice(0, 10));
+async function fetchAll(table, select, since) {
+  // Supabase caps at 1000 rows per request — paginate
+  const all = [];
+  let offset = 0;
+  const PAGE = 1000;
+  while (true) {
+    const { data, error } = await db
+      .from(table)
+      .select(select)
+      .gte('created_at', since)
+      .order('created_at', { ascending: true })
+      .range(offset, offset + PAGE - 1);
+    if (error) throw new Error(`${table} query failed: ${error.message}`);
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < PAGE) break;
+    offset += PAGE;
   }
-  return allDays;
+  return all;
 }
 
-function processPageViews(rows) {
-  const dailyViews = {};
-  const dailyVisitors = {};
-  const pageCounts = {};
-  const referrerCounts = {};
-  const countryCounts = {};
-  const deviceCounts = { Mobile: 0, Tablet: 0, Desktop: 0 };
-  const browserCounts = {};
+async function main() {
+  console.log('Fetching data from Supabase...');
+  const since = daysAgo(FETCH_DAYS);
 
-  for (const row of rows) {
-    const day = dateKey(row.created_at);
-    dailyViews[day] = (dailyViews[day] || 0) + 1;
-    const visitorKey = `${row.user_agent || 'unknown'}|${row.country || 'unknown'}`;
-    if (!dailyVisitors[day]) dailyVisitors[day] = new Set();
-    dailyVisitors[day].add(visitorKey);
-    pageCounts[row.path] = (pageCounts[row.path] || 0) + 1;
-    if (row.referrer) {
-      try {
-        const host = new URL(row.referrer).hostname;
-        if (host && !host.includes('speakupcoach.com')) {
-          referrerCounts[host] = (referrerCounts[host] || 0) + 1;
-        }
-      } catch {}
-    }
-    if (row.country) countryCounts[row.country] = (countryCounts[row.country] || 0) + 1;
-    if (row.user_agent) {
-      deviceCounts[isMobile(row.user_agent)]++;
-      const browser = getBrowser(row.user_agent);
-      browserCounts[browser] = (browserCounts[browser] || 0) + 1;
-    }
-  }
+  const [pageViews, events] = await Promise.all([
+    fetchAll('page_views', 'path, referrer, user_agent, country, visitor_id, utm_source, utm_medium, utm_campaign, created_at', since),
+    fetchAll('analytics_events', 'event_name, event_category, created_at, session_id, user_id', since),
+  ]);
 
-  const allDays = getAllDays();
-  const hasData = rows.length > 0;
+  console.log('  page_views:', pageViews.length, 'rows');
+  console.log('  analytics_events:', events.length, 'rows');
 
-  return {
-    hasData,
-    totalViews: rows.length,
-    dailyLabels: allDays,
-    dailyViews: allDays.map(d => dailyViews[d] || 0),
-    dailyVisitors: allDays.map(d => (dailyVisitors[d] ? dailyVisitors[d].size : 0)),
-    topPages: topN(pageCounts, 10),
-    topReferrers: topN(referrerCounts, 10),
-    topCountries: topN(countryCounts, 10),
-    devices: deviceCounts,
-    browsers: browserCounts,
-  };
+  const html = buildHTML(pageViews, events);
+  const outPath = path.join(__dirname, 'index.html');
+  fs.writeFileSync(outPath, html);
+  console.log('Dashboard written to:', outPath);
 }
 
-function processEvents(rows) {
-  const eventCounts = {};
-  const categoryCounts = {};
-  const dailyActiveUsers = {};
-
-  for (const row of rows) {
-    eventCounts[row.event_name] = (eventCounts[row.event_name] || 0) + 1;
-    categoryCounts[row.event_category] = (categoryCounts[row.event_category] || 0) + 1;
-    if (row.user_id || row.session_id) {
-      const day = dateKey(row.created_at);
-      if (!dailyActiveUsers[day]) dailyActiveUsers[day] = new Set();
-      dailyActiveUsers[day].add(row.user_id || row.session_id);
-    }
-  }
-
-  const funnel = {
-    landing: eventCounts['landing_page_view'] || 0,
-    signupPage: eventCounts['signup_page_view'] || 0,
-    signupComplete: eventCounts['signup_complete'] || 0,
-    onboardingComplete: eventCounts['onboarding_complete'] || 0,
-  };
-
-  const recordingsStarted = eventCounts['recording_started'] || 0;
-  const recordingsCompleted = eventCounts['recording_completed'] || 0;
-  const lessonsStarted = eventCounts['lesson_started'] || 0;
-  const lessonsCompleted = eventCounts['lesson_completed'] || 0;
-
-  const allDays = getAllDays();
-  const hasData = rows.length > 0;
-
-  return {
-    hasData,
-    totalEvents: rows.length,
-    topEvents: topN(eventCounts, 15),
-    categories: categoryCounts,
-    funnel,
-    recordingRate: recordingsStarted > 0 ? Math.round((recordingsCompleted / recordingsStarted) * 100) : 0,
-    lessonRate: lessonsStarted > 0 ? Math.round((lessonsCompleted / lessonsStarted) * 100) : 0,
-    recordingsStarted, recordingsCompleted, lessonsStarted, lessonsCompleted,
-    dailyLabels: allDays,
-    dailyActiveUsers: allDays.map(d => (dailyActiveUsers[d] ? dailyActiveUsers[d].size : 0)),
-  };
-}
-
-// ── Formatting helpers ────────────────────────────────────────────────
-
-function fmtEvent(name) {
-  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
-
-function fmtLabel(d) {
-  const [, m, day] = d.split('-');
-  const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return months[parseInt(m)] + ' ' + parseInt(day);
-}
-
-// ── HTML generation ───────────────────────────────────────────────────
-
-function generateHTML(traffic, events) {
+function buildHTML(pageViews, events) {
   const generated = new Date().toLocaleString('en-US', { timeZone: 'America/Denver' });
-  const shortLabels = JSON.stringify(traffic.dailyLabels.map(fmtLabel));
 
-  // Empty state helper
-  function emptyState(msg) {
-    return '<div class="empty-state">' + msg + '</div>';
-  }
+  // Embed raw data as JSON for client-side filtering
+  const pvData = pageViews.map(r => ({
+    d: r.created_at.slice(0, 10),
+    p: r.path,
+    r: r.referrer || '',
+    ua: r.user_agent || '',
+    c: r.country || '',
+    v: r.visitor_id || '',
+    us: r.utm_source || '',
+    um: r.utm_medium || '',
+    uc: r.utm_campaign || '',
+  }));
 
-  // Build funnel HTML
-  const funnelSteps = [
-    ['Landing Page', events.funnel.landing],
-    ['Signup Page', events.funnel.signupPage],
-    ['Signup Complete', events.funnel.signupComplete],
-    ['Onboarding Complete', events.funnel.onboardingComplete],
-  ];
-  const funnelMax = Math.max(events.funnel.landing, 1);
-  const funnelHTML = funnelSteps.map(([label, count], i) => {
-    const pct = Math.max((count / funnelMax) * 100, 8);
-    const convRate = i > 0 && funnelSteps[i - 1][1] > 0
-      ? ' (' + Math.round((count / funnelSteps[i - 1][1]) * 100) + '%)'
-      : '';
-    return '<div class="funnel-step">'
-      + '<span class="funnel-label">' + label + '</span>'
-      + '<div class="funnel-bar" style="width:' + pct + '%"><span class="funnel-count">' + count + convRate + '</span></div>'
-      + '</div>';
-  }).join('');
-
-  // Build top events table
-  const eventsTableHTML = events.topEvents.map(([name, count]) =>
-    '<tr><td>' + fmtEvent(name) + '</td><td class="num">' + count.toLocaleString() + '</td></tr>'
-  ).join('');
+  const evData = events.map(r => ({
+    d: r.created_at.slice(0, 10),
+    n: r.event_name,
+    cat: r.event_category,
+    u: r.user_id || r.session_id || '',
+  }));
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -230,583 +100,468 @@ function generateHTML(traffic, events) {
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"><\/script>
   <style>
     :root {
-      --bg: #0d1117;
-      --bg-card: #161b22;
-      --border: #21262d;
-      --text: #e6edf3;
-      --text-secondary: #8b949e;
-      --text-muted: #484f58;
-      --accent: #58a6ff;
-      --accent-green: #3fb950;
-      --accent-purple: #bc8cff;
-      --accent-orange: #d29922;
-      --accent-red: #f85149;
-      --accent-cyan: #39d2c0;
-      --accent-pink: #f778ba;
-      --funnel-start: #238636;
-      --funnel-end: #2ea043;
+      --bg: #0d1117; --bg2: #161b22; --bg3: #1c2128; --border: #21262d;
+      --text: #e6edf3; --text2: #8b949e; --text3: #484f58;
+      --blue: #58a6ff; --green: #3fb950; --purple: #bc8cff;
+      --orange: #d29922; --red: #f85149; --cyan: #39d2c0; --pink: #f778ba;
     }
-
     [data-theme="light"] {
-      --bg: #f6f8fa;
-      --bg-card: #ffffff;
-      --border: #d0d7de;
-      --text: #1f2328;
-      --text-secondary: #656d76;
-      --text-muted: #8c959f;
-      --accent: #0969da;
-      --accent-green: #1a7f37;
-      --accent-purple: #8250df;
-      --accent-orange: #bf8700;
-      --accent-red: #cf222e;
-      --accent-cyan: #0e8a7e;
-      --accent-pink: #bf3989;
-      --funnel-start: #1a7f37;
-      --funnel-end: #2da44e;
+      --bg: #f6f8fa; --bg2: #ffffff; --bg3: #f0f2f5; --border: #d0d7de;
+      --text: #1f2328; --text2: #656d76; --text3: #8c959f;
+      --blue: #0969da; --green: #1a7f37; --purple: #8250df;
+      --orange: #bf8700; --red: #cf222e; --cyan: #0e8a7e; --pink: #bf3989;
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    .wrap { max-width: 1140px; margin: 0 auto; padding: 28px 24px; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-    }
+    /* Header */
+    .hdr { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+    .hdr h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; }
+    .hdr-right { display: flex; align-items: center; gap: 8px; }
+    .subtitle { color: var(--text2); font-size: 12px; margin-top: 2px; }
 
-    .container {
-      max-width: 1140px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
+    /* Controls */
+    .controls { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+    .pill:hover { border-color: var(--blue); color: var(--text); }
+    .pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn-icon { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-radius: 8px; padding: 5px 10px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+    .btn-icon:hover { border-color: var(--blue); color: var(--text); }
 
-    /* ── Header ── */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 32px;
-    }
-    .header h1 {
-      font-size: 24px;
-      font-weight: 600;
-      letter-spacing: -0.5px;
-    }
-    .header .subtitle {
-      color: var(--text-secondary);
-      font-size: 13px;
-      margin-top: 4px;
-    }
-    .theme-toggle {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .theme-toggle:hover {
-      border-color: var(--accent);
-      color: var(--text);
-    }
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .stat .lbl { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat .val { font-size: 30px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .stat .sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
-    /* ── Section headers ── */
-    .section-header {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin: 36px 0 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-    }
+    /* Section */
+    .sec { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.7px; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 
-    /* ── Stat cards ── */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .stat-card .label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-    .stat-card .value {
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--text);
-      margin-top: 6px;
-      font-variant-numeric: tabular-nums;
-    }
-    .stat-card .sub {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
+    /* Cards / Grid */
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
+    .grid.g1 { grid-template-columns: 1fr; }
+    .grid.g3 { grid-template-columns: repeat(3, 1fr); }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .card h3 { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 14px; }
+    .cw { position: relative; }
+    .cw.h240 { height: 240px; }
+    .cw.h280 { height: 280px; }
+    .cw.h200 { height: 200px; }
+    .cw canvas { width: 100% !important; height: 100% !important; }
 
-    /* ── Chart cards ── */
-    .chart-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .chart-grid.single { grid-template-columns: 1fr; }
-    .chart-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px;
-    }
-    .chart-card h3 {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 16px;
-    }
-    .chart-wrapper {
-      position: relative;
-      width: 100%;
-    }
-    .chart-wrapper.line-chart { height: 240px; }
-    .chart-wrapper.bar-chart { height: 280px; }
-    .chart-wrapper.pie-chart { height: 220px; max-width: 220px; margin: 0 auto; }
-    .chart-wrapper canvas { width: 100% !important; height: 100% !important; }
-
-    .pie-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    .pie-section { text-align: center; }
-    .pie-section h4 {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-
-    /* ── Table ── */
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-    }
-    th {
-      text-align: left;
-      padding: 10px 16px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--border);
-    }
-    td {
-      padding: 10px 16px;
-      font-size: 14px;
-      color: var(--text);
-      border-bottom: 1px solid var(--border);
-    }
-    td.num {
-      font-variant-numeric: tabular-nums;
-      font-weight: 500;
-      text-align: right;
-    }
+    /* Tables */
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th { text-align: left; padding: 8px 14px; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid var(--border); }
+    td { padding: 8px 14px; font-size: 13px; border-bottom: 1px solid var(--border); }
+    td.n { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
     th:last-child { text-align: right; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: var(--bg); }
+    .empty { color: var(--text3); font-style: italic; padding: 40px 0; text-align: center; font-size: 13px; }
 
-    /* ── Funnel ── */
-    .funnel { display: flex; flex-direction: column; gap: 10px; }
-    .funnel-step { display: flex; align-items: center; gap: 16px; }
-    .funnel-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      min-width: 160px;
-      text-align: right;
-    }
-    .funnel-bar {
-      height: 36px;
-      background: linear-gradient(90deg, var(--funnel-start), var(--funnel-end));
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      transition: width 0.4s ease;
-    }
-    .funnel-count {
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-      white-space: nowrap;
-    }
+    /* Funnel */
+    .funnel { display: flex; flex-direction: column; gap: 8px; }
+    .fs { display: flex; align-items: center; gap: 14px; }
+    .fl { font-size: 12px; font-weight: 500; color: var(--text2); min-width: 150px; text-align: right; }
+    .fb { height: 34px; background: linear-gradient(90deg, var(--green), #2ea043); border-radius: 6px; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; min-width: 50px; }
 
-    /* ── Empty state ── */
-    .empty-state {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 180px;
-      color: var(--text-muted);
-      font-size: 14px;
-      font-style: italic;
-    }
+    /* Source list */
+    .source-list { list-style: none; }
+    .source-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .source-item:last-child { border-bottom: none; }
+    .source-name { color: var(--text); }
+    .source-bar-wrap { flex: 1; margin: 0 16px; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+    .source-bar { height: 100%; border-radius: 3px; }
+    .source-count { font-variant-numeric: tabular-nums; font-weight: 500; color: var(--text2); min-width: 40px; text-align: right; }
 
-    /* ── Footer ── */
-    footer {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 12px;
-      margin-top: 48px;
-      padding: 20px 0;
-      border-top: 1px solid var(--border);
-    }
+    footer { text-align: center; color: var(--text3); font-size: 11px; margin-top: 40px; padding: 16px 0; border-top: 1px solid var(--border); }
 
-    /* ── Responsive ── */
     @media (max-width: 768px) {
-      .chart-grid { grid-template-columns: 1fr; }
-      .pie-row { grid-template-columns: 1fr; }
-      .container { padding: 16px; }
-      .header { flex-direction: column; gap: 12px; }
-      .funnel-label { min-width: 100px; font-size: 12px; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .grid, .grid.g3 { grid-template-columns: 1fr; }
+      .wrap { padding: 14px; }
+      .hdr { flex-direction: column; align-items: flex-start; }
+      .fl { min-width: 100px; font-size: 11px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <div>
-        <h1>SpeakUp Analytics</h1>
-        <div class="subtitle">Last ${DAYS} days &middot; Updated ${generated} MT</div>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">&#9789;</span> <span id="theme-label">Light</span>
-      </button>
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <h1>SpeakUp Analytics</h1>
+      <div class="subtitle">Updated ${generated} MT</div>
     </div>
-
-    <!-- ── Summary Stats ── -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="label">Page Views</div>
-        <div class="value">${traffic.hasData ? traffic.totalViews.toLocaleString() : '--'}</div>
-        ${!traffic.hasData ? '<div class="sub">Collecting data...</div>' : '<div class="sub">Last 30 days</div>'}
+    <div class="hdr-right">
+      <div class="controls" id="period-controls">
+        <button class="pill" data-days="7">7d</button>
+        <button class="pill active" data-days="30">30d</button>
+        <button class="pill" data-days="90">90d</button>
       </div>
-      <div class="stat-card">
-        <div class="label">Total Events</div>
-        <div class="value">${events.totalEvents.toLocaleString()}</div>
-        <div class="sub">User interactions</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Recording Completion</div>
-        <div class="value">${events.recordingsStarted > 0 ? events.recordingRate + '%' : '--'}</div>
-        <div class="sub">${events.recordingsStarted > 0 ? events.recordingsCompleted + ' of ' + events.recordingsStarted + ' completed' : 'No recordings yet'}</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Lesson Completion</div>
-        <div class="value">${events.lessonsStarted > 0 ? events.lessonRate + '%' : '--'}</div>
-        <div class="sub">${events.lessonsStarted > 0 ? events.lessonsCompleted + ' of ' + events.lessonsStarted + ' completed' : 'No lessons yet'}</div>
-      </div>
+      <button class="btn-icon" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9789;</button>
     </div>
-
-    <!-- ── Traffic ── -->
-    <div class="section-header">Traffic</div>
-
-    ${traffic.hasData ? `
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Daily Page Views & Visitors</h3>
-        <div class="chart-wrapper line-chart"><canvas id="dailyTraffic"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Top Pages</h3>
-        <div class="chart-wrapper bar-chart"><canvas id="topPages"></canvas></div>
-      </div>
-    </div>
-
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Referrers</h3>
-        ${traffic.topReferrers.length > 0
-          ? '<div class="chart-wrapper bar-chart"><canvas id="topReferrers"></canvas></div>'
-          : emptyState('No external referrers recorded yet')}
-      </div>
-      <div class="chart-card">
-        <h3>Devices & Browsers</h3>
-        <div class="pie-row">
-          <div class="pie-section">
-            <h4>Devices</h4>
-            <div class="chart-wrapper pie-chart"><canvas id="devices"></canvas></div>
-          </div>
-          <div class="pie-section">
-            <h4>Browsers</h4>
-            <div class="chart-wrapper pie-chart"><canvas id="browsers"></canvas></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    ${traffic.topCountries.length > 0 ? `
-    <div class="chart-grid single">
-      <div class="chart-card">
-        <h3>Top Countries</h3>
-        <div class="chart-wrapper bar-chart"><canvas id="topCountries"></canvas></div>
-      </div>
-    </div>` : ''}
-    ` : `
-    <div class="chart-grid single">
-      <div class="chart-card">
-        ${emptyState('Page view tracking was just enabled. Data will appear within 24 hours.')}
-      </div>
-    </div>
-    `}
-
-    <!-- ── User Behavior ── -->
-    <div class="section-header">User Behavior</div>
-
-    ${events.hasData ? `
-    <div class="chart-grid single">
-      <div class="chart-card">
-        <h3>Signup Funnel</h3>
-        <div class="funnel">${funnelHTML}</div>
-      </div>
-    </div>
-
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Daily Active Users</h3>
-        <div class="chart-wrapper line-chart"><canvas id="dailyDAU"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Events by Category</h3>
-        <div class="chart-wrapper bar-chart"><canvas id="eventCategories"></canvas></div>
-      </div>
-    </div>
-
-    <div class="chart-grid single">
-      <div class="chart-card">
-        <h3>Top Events</h3>
-        <table>
-          <thead><tr><th>Event</th><th>Count</th></tr></thead>
-          <tbody>${eventsTableHTML}</tbody>
-        </table>
-      </div>
-    </div>
-    ` : `
-    <div class="chart-grid single">
-      <div class="chart-card">
-        ${emptyState('No user behavior events recorded in the last 30 days.')}
-      </div>
-    </div>
-    `}
-
-    <footer>SpeakUp Analytics &middot; Auto-generated ${generated} MT</footer>
   </div>
 
-  <script>
-    // ── Theme toggle ──
-    function toggleTheme() {
-      const html = document.documentElement;
-      const current = html.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      localStorage.setItem('speakup-theme', next);
-      document.getElementById('theme-icon').innerHTML = next === 'dark' ? '\\u263D' : '\\u2600';
-      document.getElementById('theme-label').textContent = next === 'dark' ? 'Light' : 'Dark';
-      updateChartColors(next);
-    }
+  <div class="stats" id="stats-row"></div>
 
-    // Restore saved theme
-    (function() {
-      const saved = localStorage.getItem('speakup-theme');
-      if (saved === 'light') {
-        document.documentElement.setAttribute('data-theme', 'light');
-        document.getElementById('theme-icon').innerHTML = '\\u2600';
-        document.getElementById('theme-label').textContent = 'Dark';
-      }
-    })();
+  <div class="sec">Traffic</div>
+  <div class="grid" id="traffic-grid"></div>
 
-    // ── Chart.js setup ──
-    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+  <div class="sec">Sources</div>
+  <div class="grid g3" id="sources-grid"></div>
 
-    function getChartColors() {
-      return {
-        text: isDark() ? '#8b949e' : '#656d76',
-        grid: isDark() ? '#21262d' : '#d0d7de',
-        blue: isDark() ? '#58a6ff' : '#0969da',
-        green: isDark() ? '#3fb950' : '#1a7f37',
-        purple: isDark() ? '#bc8cff' : '#8250df',
-        orange: isDark() ? '#d29922' : '#bf8700',
-        red: isDark() ? '#f85149' : '#cf222e',
-        cyan: isDark() ? '#39d2c0' : '#0e8a7e',
-        pink: isDark() ? '#f778ba' : '#bf3989',
-      };
-    }
+  <div class="sec">User Behavior</div>
+  <div id="behavior-section"></div>
 
-    const allCharts = [];
-    function updateChartColors(theme) {
-      const c = getChartColors();
-      Chart.defaults.color = c.text;
-      Chart.defaults.borderColor = c.grid;
-      allCharts.forEach(chart => {
-        if (chart.options.scales) {
-          Object.values(chart.options.scales).forEach(scale => {
-            if (scale.grid) scale.grid.color = c.grid;
-            if (scale.ticks) scale.ticks.color = c.text;
-          });
-        }
-        chart.update('none');
-      });
-    }
+  <footer>SpeakUp Analytics &middot; Auto-generated</footer>
+</div>
 
-    const C = getChartColors();
-    Chart.defaults.color = C.text;
-    Chart.defaults.borderColor = C.grid;
-    Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    Chart.defaults.font.size = 12;
-    Chart.defaults.animation.duration = 600;
+<script>
+// ── Raw data ──
+const PV = ${JSON.stringify(pvData)};
+const EV = ${JSON.stringify(evData)};
 
-    const PALETTE = [C.blue, C.green, C.purple, C.orange, C.red, C.cyan, C.pink];
+// ── State ──
+let currentDays = 30;
 
-    function baseScales(yTitle) {
-      return {
-        x: { grid: { color: C.grid, drawBorder: false }, ticks: { color: C.text, maxRotation: 45, font: { size: 11 } } },
-        y: { beginAtZero: true, grid: { color: C.grid, drawBorder: false }, ticks: { color: C.text, font: { size: 11 } }, title: yTitle ? { display: true, text: yTitle, color: C.text, font: { size: 11 } } : undefined },
-      };
-    }
+// ── Theme ──
+function toggleTheme() {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('su-theme', t);
+  document.getElementById('theme-btn').innerHTML = t === 'dark' ? '\\u263D' : '\\u2600';
+  render();
+}
+(function() {
+  const s = localStorage.getItem('su-theme');
+  if (s === 'light') { document.documentElement.setAttribute('data-theme', 'light'); document.getElementById('theme-btn').innerHTML = '\\u2600'; }
+})();
 
-    ${traffic.hasData ? `
-    // ── Daily Traffic ──
-    allCharts.push(new Chart(document.getElementById('dailyTraffic'), {
-      type: 'line',
-      data: {
-        labels: ${shortLabels},
-        datasets: [
-          { label: 'Page Views', data: ${JSON.stringify(traffic.dailyViews)}, borderColor: C.blue, backgroundColor: C.blue + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
-          { label: 'Unique Visitors', data: ${JSON.stringify(traffic.dailyVisitors)}, borderColor: C.green, backgroundColor: C.green + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 }
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } }, scales: baseScales() }
-    }));
+// ── Period controls ──
+document.getElementById('period-controls').addEventListener('click', e => {
+  const btn = e.target.closest('.pill');
+  if (!btn) return;
+  document.querySelectorAll('#period-controls .pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDays = parseInt(btn.dataset.days);
+  render();
+});
 
-    // ── Top Pages ──
-    allCharts.push(new Chart(document.getElementById('topPages'), {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(traffic.topPages.map(p => p[0]))},
-        datasets: [{ data: ${JSON.stringify(traffic.topPages.map(p => p[1]))}, backgroundColor: C.blue + 'cc', borderRadius: 4, barThickness: 18 }]
-      },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: C.grid }, ticks: { color: C.text } }, y: { grid: { display: false }, ticks: { color: C.text, font: { size: 12 } } } } }
-    }));
-
-    ${traffic.topReferrers.length > 0 ? `
-    allCharts.push(new Chart(document.getElementById('topReferrers'), {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(traffic.topReferrers.map(r => r[0]))},
-        datasets: [{ data: ${JSON.stringify(traffic.topReferrers.map(r => r[1]))}, backgroundColor: C.purple + 'cc', borderRadius: 4, barThickness: 18 }]
-      },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: C.grid }, ticks: { color: C.text } }, y: { grid: { display: false }, ticks: { color: C.text } } } }
-    }));` : ''}
-
-    // ── Devices ──
-    ${Object.values(traffic.devices).some(v => v > 0) ? `
-    allCharts.push(new Chart(document.getElementById('devices'), {
-      type: 'doughnut',
-      data: {
-        labels: ${JSON.stringify(Object.keys(traffic.devices).filter(k => traffic.devices[k] > 0))},
-        datasets: [{ data: ${JSON.stringify(Object.entries(traffic.devices).filter(([,v]) => v > 0).map(([,v]) => v))}, backgroundColor: [C.blue, C.green, C.purple], borderWidth: 0 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } }
-    }));` : ''}
-
-    // ── Browsers ──
-    ${Object.keys(traffic.browsers).length > 0 ? `
-    allCharts.push(new Chart(document.getElementById('browsers'), {
-      type: 'doughnut',
-      data: {
-        labels: ${JSON.stringify(Object.keys(traffic.browsers))},
-        datasets: [{ data: ${JSON.stringify(Object.values(traffic.browsers))}, backgroundColor: PALETTE.slice(0, ${Object.keys(traffic.browsers).length}), borderWidth: 0 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } }
-    }));` : ''}
-
-    ${traffic.topCountries.length > 0 ? `
-    allCharts.push(new Chart(document.getElementById('topCountries'), {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(traffic.topCountries.map(c => c[0]))},
-        datasets: [{ data: ${JSON.stringify(traffic.topCountries.map(c => c[1]))}, backgroundColor: C.cyan + 'cc', borderRadius: 4, barThickness: 18 }]
-      },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: C.grid }, ticks: { color: C.text } }, y: { grid: { display: false }, ticks: { color: C.text } } } }
-    }));` : ''}
-    ` : '// No traffic data yet'}
-
-    ${events.hasData ? `
-    // ── Daily Active Users ──
-    allCharts.push(new Chart(document.getElementById('dailyDAU'), {
-      type: 'line',
-      data: {
-        labels: ${shortLabels},
-        datasets: [{
-          label: 'Active Users',
-          data: ${JSON.stringify(events.dailyActiveUsers)},
-          borderColor: C.green,
-          backgroundColor: C.green + '18',
-          fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5
-        }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false } }, scales: baseScales('Users') }
-    }));
-
-    // ── Event Categories ──
-    allCharts.push(new Chart(document.getElementById('eventCategories'), {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(Object.keys(events.categories).map(fmtEvent))},
-        datasets: [{ data: ${JSON.stringify(Object.values(events.categories))}, backgroundColor: PALETTE.slice(0, ${Object.keys(events.categories).length}).map(c => c + 'cc'), borderRadius: 4 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: baseScales('Events') }
-    }));
-    ` : '// No event data yet'}
-  <\/script>
-</body>
-</html>`;
+// ── Helpers ──
+function getStyle(prop) { return getComputedStyle(document.documentElement).getPropertyValue(prop).trim(); }
+function daysSince(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  return Math.floor((today - d) / 86400000);
+}
+function dateRange(days) {
+  const arr = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    arr.push(d.toISOString().slice(0, 10));
+  }
+  return arr;
+}
+function fmtDate(d) {
+  const [,m,day] = d.split('-');
+  const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(m)] + ' ' + parseInt(day);
+}
+function fmtEvent(n) { return n.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase()); }
+function topN(obj, n) { return Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, n); }
+function isMobile(ua) {
+  if (/mobile|android.*mobile|iphone|ipod/i.test(ua)) return 'Mobile';
+  if (/tablet|ipad|android(?!.*mobile)/i.test(ua)) return 'Tablet';
+  return 'Desktop';
+}
+function getBrowser(ua) {
+  if (/edg\\//i.test(ua)) return 'Edge';
+  if (/chrome|crios/i.test(ua)) return 'Chrome';
+  if (/firefox|fxios/i.test(ua)) return 'Firefox';
+  if (/safari/i.test(ua) && !/chrome/i.test(ua)) return 'Safari';
+  return 'Other';
+}
+function classifyReferrer(ref) {
+  if (!ref) return 'Direct';
+  try {
+    const h = new URL(ref).hostname.toLowerCase();
+    if (h.includes('speakupcoach.com')) return 'Direct';
+    if (h.includes('google')) return 'Google';
+    if (h.includes('instagram') || h.includes('ig.')) return 'Instagram';
+    if (h.includes('facebook') || h.includes('fb.')) return 'Facebook';
+    if (h.includes('twitter') || h.includes('t.co') || h.includes('x.com')) return 'X / Twitter';
+    if (h.includes('linkedin')) return 'LinkedIn';
+    if (h.includes('tiktok')) return 'TikTok';
+    if (h.includes('youtube')) return 'YouTube';
+    if (h.includes('reddit')) return 'Reddit';
+    if (h.includes('bing')) return 'Bing';
+    return h;
+  } catch { return 'Other'; }
 }
 
-async function main() {
-  console.log('Fetching data from Supabase...');
-  const [pageViews, analyticsEvents] = await Promise.all([fetchPageViews(), fetchAnalyticsEvents()]);
-  console.log('  page_views:', pageViews.length, 'rows');
-  console.log('  analytics_events:', analyticsEvents.length, 'rows');
+// ── Chart management ──
+const charts = {};
+function makeChart(id, config) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  charts[id] = new Chart(canvas, config);
+}
 
-  const traffic = processPageViews(pageViews);
-  const events = processEvents(analyticsEvents);
-  const html = generateHTML(traffic, events);
+// ── Source list builder ──
+function sourceListHTML(items, color) {
+  if (items.length === 0) return '<div class="empty">No data yet</div>';
+  const max = items[0][1];
+  return '<ul class="source-list">' + items.map(([name, count]) => {
+    const pct = Math.max((count / max) * 100, 4);
+    return '<li class="source-item"><span class="source-name">' + name + '</span><div class="source-bar-wrap"><div class="source-bar" style="width:' + pct + '%;background:' + color + '"></div></div><span class="source-count">' + count.toLocaleString() + '</span></li>';
+  }).join('') + '</ul>';
+}
 
-  const outPath = path.join(__dirname, 'index.html');
-  fs.writeFileSync(outPath, html);
-  console.log('Dashboard written to:', outPath);
+// ── Main render ──
+function render() {
+  const days = dateRange(currentDays);
+  const pv = PV.filter(r => daysSince(r.d) < currentDays);
+  const ev = EV.filter(r => daysSince(r.d) < currentDays);
+
+  const C = {
+    blue: getStyle('--blue'), green: getStyle('--green'), purple: getStyle('--purple'),
+    orange: getStyle('--orange'), red: getStyle('--red'), cyan: getStyle('--cyan'), pink: getStyle('--pink'),
+    text: getStyle('--text2'), grid: getStyle('--border'),
+  };
+  const PALETTE = [C.blue, C.green, C.purple, C.orange, C.red, C.cyan, C.pink];
+
+  Chart.defaults.color = C.text;
+  Chart.defaults.borderColor = C.grid;
+
+  // ── Compute stats ──
+  const totalViews = pv.length;
+  const uniqueVisitors = new Set(pv.map(r => r.v || (r.ua + '|' + r.c))).size;
+
+  // Bounce rate: visitors who viewed only 1 page
+  const visitorPages = {};
+  pv.forEach(r => {
+    const vid = r.v || (r.ua + '|' + r.c);
+    if (!visitorPages[vid]) visitorPages[vid] = new Set();
+    visitorPages[vid].add(r.d + r.p); // unique page per day
+  });
+  const totalSessions = Object.keys(visitorPages).length;
+  const bouncedSessions = Object.values(visitorPages).filter(s => s.size === 1).length;
+  const bounceRate = totalSessions > 0 ? Math.round((bouncedSessions / totalSessions) * 100) : 0;
+
+  // Daily views/visitors
+  const dailyViews = {};
+  const dailyVisitors = {};
+  pv.forEach(r => {
+    dailyViews[r.d] = (dailyViews[r.d] || 0) + 1;
+    if (!dailyVisitors[r.d]) dailyVisitors[r.d] = new Set();
+    dailyVisitors[r.d].add(r.v || (r.ua + '|' + r.c));
+  });
+
+  // Behavior stats
+  const evCounts = {};
+  ev.forEach(r => { evCounts[r.n] = (evCounts[r.n] || 0) + 1; });
+  const recStarted = evCounts['recording_started'] || 0;
+  const recCompleted = evCounts['recording_completed'] || 0;
+  const lesStarted = evCounts['lesson_started'] || 0;
+  const lesCompleted = evCounts['lesson_completed'] || 0;
+
+  // ── Stats row ──
+  const hasPV = pv.length > 0;
+  document.getElementById('stats-row').innerHTML = \`
+    <div class="stat"><div class="lbl">Visitors</div><div class="val">\${hasPV ? uniqueVisitors.toLocaleString() : '--'}</div><div class="sub">\${hasPV ? 'Unique visitors' : 'Collecting...'}</div></div>
+    <div class="stat"><div class="lbl">Page Views</div><div class="val">\${hasPV ? totalViews.toLocaleString() : '--'}</div><div class="sub">\${hasPV ? (totalViews / currentDays).toFixed(1) + '/day avg' : 'Collecting...'}</div></div>
+    <div class="stat"><div class="lbl">Bounce Rate</div><div class="val">\${hasPV ? bounceRate + '%' : '--'}</div><div class="sub">\${hasPV ? bouncedSessions + ' of ' + totalSessions + ' sessions' : 'Collecting...'}</div></div>
+    <div class="stat"><div class="lbl">Recordings</div><div class="val">\${recStarted > 0 ? recCompleted + '/' + recStarted : '--'}</div><div class="sub">\${recStarted > 0 ? Math.round(recCompleted/recStarted*100) + '% completed' : 'No recordings'}</div></div>
+    <div class="stat"><div class="lbl">Lessons</div><div class="val">\${lesStarted > 0 ? lesCompleted + '/' + lesStarted : '--'}</div><div class="sub">\${lesStarted > 0 ? Math.round(lesCompleted/lesStarted*100) + '% completed' : 'No lessons'}</div></div>
+  \`;
+
+  // ── Traffic charts ──
+  const labels = days.map(fmtDate);
+  // Thin labels: show every Nth label
+  const labelInterval = currentDays <= 7 ? 1 : currentDays <= 30 ? 3 : 7;
+
+  document.getElementById('traffic-grid').innerHTML = \`
+    <div class="card"><h3>Page Views & Visitors</h3><div class="cw h240"><canvas id="c-daily"></canvas></div></div>
+    <div class="card"><h3>Top Pages</h3><div class="cw h280"><canvas id="c-pages"></canvas></div></div>
+  \`;
+
+  if (hasPV) {
+    makeChart('c-daily', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Views', data: days.map(d => dailyViews[d] || 0), borderColor: C.blue, backgroundColor: C.blue + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
+          { label: 'Visitors', data: days.map(d => dailyVisitors[d] ? dailyVisitors[d].size : 0), borderColor: C.green, backgroundColor: C.green + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 14, font: { size: 11 } } } },
+        scales: {
+          x: { grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 }, maxRotation: 0, callback: (v,i) => i % labelInterval === 0 ? labels[i] : '' } },
+          y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 } } },
+        },
+      },
+    });
+
+    const pageCounts = {};
+    pv.forEach(r => { pageCounts[r.p] = (pageCounts[r.p] || 0) + 1; });
+    const topPages = topN(pageCounts, 10);
+
+    makeChart('c-pages', {
+      type: 'bar',
+      data: {
+        labels: topPages.map(p => p[0]),
+        datasets: [{ data: topPages.map(p => p[1]), backgroundColor: C.blue + 'cc', borderRadius: 4, barThickness: 20 }],
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw.toLocaleString() + ' views' } } },
+        scales: { x: { grid: { color: C.grid }, ticks: { color: C.text } }, y: { grid: { display: false }, ticks: { color: C.text, font: { size: 11 } } } },
+      },
+    });
+  }
+
+  // ── Sources ──
+  const referrerCounts = {};
+  const utmSourceCounts = {};
+  const countryCounts = {};
+  pv.forEach(r => {
+    const src = classifyReferrer(r.r);
+    referrerCounts[src] = (referrerCounts[src] || 0) + 1;
+    if (r.us) utmSourceCounts[r.us] = (utmSourceCounts[r.us] || 0) + 1;
+    if (r.c) countryCounts[r.c] = (countryCounts[r.c] || 0) + 1;
+  });
+
+  document.getElementById('sources-grid').innerHTML = \`
+    <div class="card"><h3>Referrers</h3>\${hasPV ? sourceListHTML(topN(referrerCounts, 10), C.blue) : '<div class="empty">No data yet</div>'}</div>
+    <div class="card"><h3>UTM Sources</h3>\${hasPV && Object.keys(utmSourceCounts).length > 0 ? sourceListHTML(topN(utmSourceCounts, 10), C.purple) : '<div class="empty">' + (hasPV ? 'No UTM-tagged traffic yet' : 'No data yet') + '</div>'}</div>
+    <div class="card"><h3>Countries</h3>\${hasPV && Object.keys(countryCounts).length > 0 ? sourceListHTML(topN(countryCounts, 10), C.cyan) : '<div class="empty">No data yet</div>'}</div>
+  \`;
+
+  // ── Devices & browsers (only if data) ──
+  const deviceCounts = {};
+  const browserCounts = {};
+  pv.forEach(r => {
+    if (r.ua) {
+      const dev = isMobile(r.ua);
+      deviceCounts[dev] = (deviceCounts[dev] || 0) + 1;
+      const br = getBrowser(r.ua);
+      browserCounts[br] = (browserCounts[br] || 0) + 1;
+    }
+  });
+
+  // ── Behavior section ──
+  const hasEV = ev.length > 0;
+  const dailyActiveUsers = {};
+  ev.forEach(r => {
+    if (!dailyActiveUsers[r.d]) dailyActiveUsers[r.d] = new Set();
+    dailyActiveUsers[r.d].add(r.u);
+  });
+
+  const funnel = [
+    ['Landing Page', evCounts['landing_page_view'] || 0],
+    ['Signup Page', evCounts['signup_page_view'] || 0],
+    ['Signup Complete', evCounts['signup_complete'] || 0],
+    ['Onboarding Done', evCounts['onboarding_complete'] || 0],
+  ];
+  const funnelMax = Math.max(funnel[0][1], 1);
+
+  const catCounts = {};
+  ev.forEach(r => { catCounts[r.cat] = (catCounts[r.cat] || 0) + 1; });
+
+  const topEvents = topN(evCounts, 15);
+
+  let behaviorHTML = '';
+
+  if (hasPV) {
+    behaviorHTML += '<div class="grid"><div class="card"><h3>Devices</h3><div class="cw h200"><canvas id="c-devices"></canvas></div></div><div class="card"><h3>Browsers</h3><div class="cw h200"><canvas id="c-browsers"></canvas></div></div></div>';
+  }
+
+  if (hasEV) {
+    const funnelBars = funnel.map(([label, count], i) => {
+      const pct = Math.max((count / funnelMax) * 100, 8);
+      const conv = i > 0 && funnel[i-1][1] > 0 ? ' (' + Math.round(count / funnel[i-1][1] * 100) + '%)' : '';
+      return '<div class="fs"><span class="fl">' + label + '</span><div class="fb" style="width:' + pct + '%">' + count + conv + '</div></div>';
+    }).join('');
+
+    behaviorHTML += \`
+      <div class="grid g1"><div class="card"><h3>Signup Funnel</h3><div class="funnel">\${funnelBars}</div></div></div>
+      <div class="grid">
+        <div class="card"><h3>Daily Active Users</h3><div class="cw h240"><canvas id="c-dau"></canvas></div></div>
+        <div class="card"><h3>Events by Category</h3><div class="cw h240"><canvas id="c-cats"></canvas></div></div>
+      </div>
+      <div class="grid g1"><div class="card"><h3>Top Events</h3>
+        <table><thead><tr><th>Event</th><th>Count</th></tr></thead><tbody>
+          \${topEvents.map(([n, c]) => '<tr><td>' + fmtEvent(n) + '</td><td class="n">' + c.toLocaleString() + '</td></tr>').join('')}
+        </tbody></table>
+      </div></div>
+    \`;
+  } else {
+    behaviorHTML += '<div class="grid g1"><div class="card"><div class="empty">No user behavior events in this period.</div></div></div>';
+  }
+
+  document.getElementById('behavior-section').innerHTML = behaviorHTML;
+
+  // Render charts that depend on behavior section DOM
+  if (hasPV && Object.values(deviceCounts).some(v => v > 0)) {
+    const filteredDevices = Object.entries(deviceCounts).filter(([,v]) => v > 0);
+    makeChart('c-devices', {
+      type: 'doughnut',
+      data: { labels: filteredDevices.map(d => d[0]), datasets: [{ data: filteredDevices.map(d => d[1]), backgroundColor: [C.blue, C.green, C.purple], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } },
+    });
+  }
+  if (hasPV && Object.keys(browserCounts).length > 0) {
+    makeChart('c-browsers', {
+      type: 'doughnut',
+      data: { labels: Object.keys(browserCounts), datasets: [{ data: Object.values(browserCounts), backgroundColor: PALETTE.slice(0, Object.keys(browserCounts).length), borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } } } },
+    });
+  }
+
+  if (hasEV) {
+    makeChart('c-dau', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{ label: 'Users', data: days.map(d => dailyActiveUsers[d] ? dailyActiveUsers[d].size : 0), borderColor: C.green, backgroundColor: C.green + '18', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 }, maxRotation: 0, callback: (v,i) => i % labelInterval === 0 ? labels[i] : '' } },
+          y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.text, font: { size: 10 } } },
+        },
+      },
+    });
+
+    makeChart('c-cats', {
+      type: 'bar',
+      data: {
+        labels: Object.keys(catCounts).map(fmtEvent),
+        datasets: [{ data: Object.values(catCounts), backgroundColor: PALETTE.slice(0, Object.keys(catCounts).length).map(c => c + 'cc'), borderRadius: 4 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false }, ticks: { color: C.text, font: { size: 10 } } }, y: { beginAtZero: true, grid: { color: C.grid }, ticks: { color: C.text } } },
+      },
+    });
+  }
+}
+
+// Initial render
+render();
+<\/script>
+</body>
+</html>`;
 }
 
 main().catch((err) => { console.error('Error:', err.message); process.exit(1); });
