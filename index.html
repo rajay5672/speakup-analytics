@@ -1,281 +1,459 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpeakUp Analytics Dashboard</title>
+  <title>SpeakUp Analytics</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <style>
+    :root {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --border: #21262d;
+      --text: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #484f58;
+      --accent: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-purple: #bc8cff;
+      --accent-orange: #d29922;
+      --accent-red: #f85149;
+      --accent-cyan: #39d2c0;
+      --accent-pink: #f778ba;
+      --funnel-start: #238636;
+      --funnel-end: #2ea043;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f8fa;
+      --bg-card: #ffffff;
+      --border: #d0d7de;
+      --text: #1f2328;
+      --text-secondary: #656d76;
+      --text-muted: #8c959f;
+      --accent: #0969da;
+      --accent-green: #1a7f37;
+      --accent-purple: #8250df;
+      --accent-orange: #bf8700;
+      --accent-red: #cf222e;
+      --accent-cyan: #0e8a7e;
+      --accent-pink: #bf3989;
+      --funnel-start: #1a7f37;
+      --funnel-end: #2da44e;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f1117;
-      color: #e1e4e8;
-      padding: 24px;
-      max-width: 1200px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1140px;
       margin: 0 auto;
+      padding: 32px 24px;
     }
-    h1 { font-size: 28px; margin-bottom: 4px; color: #fff; }
-    .subtitle { color: #8b949e; margin-bottom: 32px; font-size: 14px; }
-    h2 {
-      font-size: 18px;
-      color: #c9d1d9;
-      margin: 32px 0 16px;
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    .header .subtitle {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .theme-toggle {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-toggle:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    /* ── Section headers ── */
+    .section-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 36px 0 16px;
       padding-bottom: 8px;
-      border-bottom: 1px solid #21262d;
+      border-bottom: 1px solid var(--border);
     }
+
+    /* ── Stat cards ── */
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .stat-card {
-      background: #161b22;
-      border: 1px solid #21262d;
-      border-radius: 8px;
-      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
     }
-    .stat-card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card .value { font-size: 28px; font-weight: 700; color: #fff; margin-top: 4px; }
-    .stat-card .sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
+    .stat-card .label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card .sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Chart cards ── */
     .chart-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .chart-grid.single { grid-template-columns: 1fr; }
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .chart-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
       margin-bottom: 16px;
     }
-    .chart-card {
-      background: #161b22;
-      border: 1px solid #21262d;
-      border-radius: 8px;
-      padding: 16px;
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
     }
-    .chart-card h3 { font-size: 14px; color: #c9d1d9; margin-bottom: 12px; }
-    canvas { width: 100% !important; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #21262d; font-size: 13px; }
-    th { color: #8b949e; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-    td { color: #c9d1d9; }
-    .funnel { display: flex; flex-direction: column; gap: 8px; }
-    .funnel-step {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .chart-wrapper.line-chart { height: 240px; }
+    .chart-wrapper.bar-chart { height: 280px; }
+    .chart-wrapper.pie-chart { height: 220px; max-width: 220px; margin: 0 auto; }
+    .chart-wrapper canvas { width: 100% !important; height: 100% !important; }
+
+    .pie-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .pie-section { text-align: center; }
+    .pie-section h4 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 10px 16px;
+      font-size: 14px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    td.num {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+      text-align: right;
+    }
+    th:last-child { text-align: right; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+
+    /* ── Funnel ── */
+    .funnel { display: flex; flex-direction: column; gap: 10px; }
+    .funnel-step { display: flex; align-items: center; gap: 16px; }
+    .funnel-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      min-width: 160px;
+      text-align: right;
     }
     .funnel-bar {
-      height: 32px;
-      background: linear-gradient(90deg, #238636, #2ea043);
-      border-radius: 4px;
+      height: 36px;
+      background: linear-gradient(90deg, var(--funnel-start), var(--funnel-end));
+      border-radius: 6px;
       display: flex;
       align-items: center;
-      padding: 0 12px;
+      padding: 0 14px;
+      transition: width 0.4s ease;
+    }
+    .funnel-count {
       font-size: 13px;
       font-weight: 600;
       color: #fff;
-      min-width: 40px;
-      transition: width 0.3s;
+      white-space: nowrap;
     }
-    .funnel-label { font-size: 13px; color: #8b949e; min-width: 140px; }
-    footer { text-align: center; color: #484f58; font-size: 12px; margin-top: 48px; padding: 16px 0; border-top: 1px solid #21262d; }
-    @media (max-width: 600px) {
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 48px;
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
       .chart-grid { grid-template-columns: 1fr; }
-      body { padding: 12px; }
+      .pie-row { grid-template-columns: 1fr; }
+      .container { padding: 16px; }
+      .header { flex-direction: column; gap: 12px; }
+      .funnel-label { min-width: 100px; font-size: 12px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-  <h1>SpeakUp Analytics</h1>
-  <p class="subtitle">Last 30 days &middot; Generated 4/12/2026, 2:42:13 PM MT</p>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>SpeakUp Analytics</h1>
+        <div class="subtitle">Last 30 days &middot; Updated 4/12/2026, 3:21:06 PM MT</div>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-icon">&#9789;</span> <span id="theme-label">Light</span>
+      </button>
+    </div>
 
-  <!-- ── Summary Stats ── -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="label">Total Page Views</div>
-      <div class="value">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Avg Daily Views</div>
-      <div class="value">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Recording Completion</div>
-      <div class="value">43%</div>
-      <div class="sub">15 / 35</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Lesson Completion</div>
-      <div class="value">3%</div>
-      <div class="sub">1 / 29</div>
-    </div>
-  </div>
-
-  <!-- ── Traffic Section ── -->
-  <h2>Traffic</h2>
-
-  <div class="chart-grid">
-    <div class="chart-card">
-      <h3>Daily Page Views &amp; Visitors</h3>
-      <canvas id="dailyTraffic"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3>Top Pages</h3>
-      <canvas id="topPages"></canvas>
-    </div>
-  </div>
-
-  <div class="chart-grid">
-    <div class="chart-card">
-      <h3>Top Referrers</h3>
-      <p style="color:#484f58;font-size:13px;padding:24px 0;">No external referrers yet</p>
-    </div>
-    <div class="chart-card">
-      <h3>Devices &amp; Browsers</h3>
-      <div style="display:flex;gap:16px;">
-        <div style="flex:1;"><canvas id="devices"></canvas></div>
-        <div style="flex:1;"><canvas id="browsers"></canvas></div>
+    <!-- ── Summary Stats ── -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="label">Page Views</div>
+        <div class="value">--</div>
+        <div class="sub">Collecting data...</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Events</div>
+        <div class="value">828</div>
+        <div class="sub">User interactions</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Recording Completion</div>
+        <div class="value">43%</div>
+        <div class="sub">15 of 35 completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Lesson Completion</div>
+        <div class="value">3%</div>
+        <div class="sub">1 of 29 completed</div>
       </div>
     </div>
-  </div>
 
-  
+    <!-- ── Traffic ── -->
+    <div class="section-header">Traffic</div>
 
-  <!-- ── User Behavior Section ── -->
-  <h2>User Behavior</h2>
-
-  <div class="chart-card" style="margin-bottom:16px;">
-    <h3>Signup Funnel</h3>
-    <div class="funnel">
-      <div class="funnel-step"><span class="funnel-label">Landing Page</span><div class="funnel-bar" style="width:100%">470</div></div><div class="funnel-step"><span class="funnel-label">Signup Page</span><div class="funnel-bar" style="width:5%">23</div></div><div class="funnel-step"><span class="funnel-label">Signup Complete</span><div class="funnel-bar" style="width:5%">6</div></div><div class="funnel-step"><span class="funnel-label">Onboarding Complete</span><div class="funnel-bar" style="width:5%">1</div></div>
+    
+    <div class="chart-grid single">
+      <div class="chart-card">
+        <div class="empty-state">Page view tracking was just enabled. Data will appear within 24 hours.</div>
+      </div>
     </div>
-  </div>
+    
 
-  <div class="chart-grid">
-    <div class="chart-card">
-      <h3>Daily Active Users</h3>
-      <canvas id="dailyDAU"></canvas>
+    <!-- ── User Behavior ── -->
+    <div class="section-header">User Behavior</div>
+
+    
+    <div class="chart-grid single">
+      <div class="chart-card">
+        <h3>Signup Funnel</h3>
+        <div class="funnel"><div class="funnel-step"><span class="funnel-label">Landing Page</span><div class="funnel-bar" style="width:100%"><span class="funnel-count">470</span></div></div><div class="funnel-step"><span class="funnel-label">Signup Page</span><div class="funnel-bar" style="width:8%"><span class="funnel-count">23 (5%)</span></div></div><div class="funnel-step"><span class="funnel-label">Signup Complete</span><div class="funnel-bar" style="width:8%"><span class="funnel-count">6 (26%)</span></div></div><div class="funnel-step"><span class="funnel-label">Onboarding Complete</span><div class="funnel-bar" style="width:8%"><span class="funnel-count">1 (17%)</span></div></div></div>
+      </div>
     </div>
-    <div class="chart-card">
-      <h3>Events by Category</h3>
-      <canvas id="eventCategories"></canvas>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Daily Active Users</h3>
+        <div class="chart-wrapper line-chart"><canvas id="dailyDAU"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Events by Category</h3>
+        <div class="chart-wrapper bar-chart"><canvas id="eventCategories"></canvas></div>
+      </div>
     </div>
-  </div>
 
-  <div class="chart-card" style="margin-top:16px;">
-    <h3>Top Events</h3>
-    <table>
-      <thead><tr><th>Event</th><th>Count</th></tr></thead>
-      <tbody>
-        <tr><td>landing_page_view</td><td>470</td></tr><tr><td>dashboard_viewed</td><td>80</td></tr><tr><td>try_page_used</td><td>35</td></tr><tr><td>recording_started</td><td>35</td></tr><tr><td>lesson_started</td><td>29</td></tr><tr><td>signup_page_view</td><td>23</td></tr><tr><td>analytics_page_viewed</td><td>20</td></tr><tr><td>track_selected</td><td>17</td></tr><tr><td>recording_completed</td><td>15</td></tr><tr><td>feedback_viewed</td><td>15</td></tr><tr><td>onboarding_started</td><td>14</td></tr><tr><td>free_practice_started</td><td>13</td></tr><tr><td>lesson_step_viewed</td><td>11</td></tr><tr><td>login_complete</td><td>10</td></tr><tr><td>onboarding_goals_selected</td><td>8</td></tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="chart-grid single">
+      <div class="chart-card">
+        <h3>Top Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>Count</th></tr></thead>
+          <tbody><tr><td>Landing Page View</td><td class="num">470</td></tr><tr><td>Dashboard Viewed</td><td class="num">80</td></tr><tr><td>Try Page Used</td><td class="num">35</td></tr><tr><td>Recording Started</td><td class="num">35</td></tr><tr><td>Lesson Started</td><td class="num">29</td></tr><tr><td>Signup Page View</td><td class="num">23</td></tr><tr><td>Analytics Page Viewed</td><td class="num">20</td></tr><tr><td>Track Selected</td><td class="num">17</td></tr><tr><td>Recording Completed</td><td class="num">15</td></tr><tr><td>Feedback Viewed</td><td class="num">15</td></tr><tr><td>Onboarding Started</td><td class="num">14</td></tr><tr><td>Free Practice Started</td><td class="num">13</td></tr><tr><td>Lesson Step Viewed</td><td class="num">11</td></tr><tr><td>Login Complete</td><td class="num">10</td></tr><tr><td>Onboarding Goals Selected</td><td class="num">8</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    
 
-  <footer>SpeakUp Analytics Dashboard &middot; Auto-generated 4/12/2026, 2:42:13 PM MT</footer>
+    <footer>SpeakUp Analytics &middot; Auto-generated 4/12/2026, 3:21:06 PM MT</footer>
+  </div>
 
   <script>
-    const COLORS = {
-      blue: '#58a6ff',
-      green: '#3fb950',
-      purple: '#bc8cff',
-      orange: '#d29922',
-      red: '#f85149',
-      cyan: '#39d2c0',
-      pink: '#f778ba',
-    };
-    const PALETTE = [COLORS.blue, COLORS.green, COLORS.purple, COLORS.orange, COLORS.red, COLORS.cyan, COLORS.pink];
+    // ── Theme toggle ──
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('speakup-theme', next);
+      document.getElementById('theme-icon').innerHTML = next === 'dark' ? '\u263D' : '\u2600';
+      document.getElementById('theme-label').textContent = next === 'dark' ? 'Light' : 'Dark';
+      updateChartColors(next);
+    }
 
-    Chart.defaults.color = '#8b949e';
-    Chart.defaults.borderColor = '#21262d';
-    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    // Restore saved theme
+    (function() {
+      const saved = localStorage.getItem('speakup-theme');
+      if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.getElementById('theme-icon').innerHTML = '\u2600';
+        document.getElementById('theme-label').textContent = 'Dark';
+      }
+    })();
 
-    // ── Daily Traffic ──
-    new Chart(document.getElementById('dailyTraffic'), {
-      type: 'line',
-      data: {
-        labels: ["03-14","03-15","03-16","03-17","03-18","03-19","03-20","03-21","03-22","03-23","03-24","03-25","03-26","03-27","03-28","03-29","03-30","03-31","04-01","04-02","04-03","04-04","04-05","04-06","04-07","04-08","04-09","04-10","04-11","04-12"],
-        datasets: [
-          {
-            label: 'Page Views',
-            data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            borderColor: COLORS.blue,
-            backgroundColor: 'rgba(88,166,255,0.1)',
-            fill: true,
-            tension: 0.3,
-          },
-          {
-            label: 'Unique Visitors',
-            data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            borderColor: COLORS.green,
-            backgroundColor: 'rgba(63,185,80,0.1)',
-            fill: true,
-            tension: 0.3,
-          }
-        ]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
-    });
+    // ── Chart.js setup ──
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
 
-    // ── Top Pages ──
-    new Chart(document.getElementById('topPages'), {
-      type: 'bar',
-      data: {
-        labels: [],
-        datasets: [{ label: 'Views', data: [], backgroundColor: COLORS.blue }]
-      },
-      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-    });
+    function getChartColors() {
+      return {
+        text: isDark() ? '#8b949e' : '#656d76',
+        grid: isDark() ? '#21262d' : '#d0d7de',
+        blue: isDark() ? '#58a6ff' : '#0969da',
+        green: isDark() ? '#3fb950' : '#1a7f37',
+        purple: isDark() ? '#bc8cff' : '#8250df',
+        orange: isDark() ? '#d29922' : '#bf8700',
+        red: isDark() ? '#f85149' : '#cf222e',
+        cyan: isDark() ? '#39d2c0' : '#0e8a7e',
+        pink: isDark() ? '#f778ba' : '#bf3989',
+      };
+    }
+
+    const allCharts = [];
+    function updateChartColors(theme) {
+      const c = getChartColors();
+      Chart.defaults.color = c.text;
+      Chart.defaults.borderColor = c.grid;
+      allCharts.forEach(chart => {
+        if (chart.options.scales) {
+          Object.values(chart.options.scales).forEach(scale => {
+            if (scale.grid) scale.grid.color = c.grid;
+            if (scale.ticks) scale.ticks.color = c.text;
+          });
+        }
+        chart.update('none');
+      });
+    }
+
+    const C = getChartColors();
+    Chart.defaults.color = C.text;
+    Chart.defaults.borderColor = C.grid;
+    Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.animation.duration = 600;
+
+    const PALETTE = [C.blue, C.green, C.purple, C.orange, C.red, C.cyan, C.pink];
+
+    function baseScales(yTitle) {
+      return {
+        x: { grid: { color: C.grid, drawBorder: false }, ticks: { color: C.text, maxRotation: 45, font: { size: 11 } } },
+        y: { beginAtZero: true, grid: { color: C.grid, drawBorder: false }, ticks: { color: C.text, font: { size: 11 } }, title: yTitle ? { display: true, text: yTitle, color: C.text, font: { size: 11 } } : undefined },
+      };
+    }
+
+    // No traffic data yet
 
     
-
-    // ── Devices ──
-    new Chart(document.getElementById('devices'), {
-      type: 'doughnut',
-      data: {
-        labels: ["Mobile","Tablet","Desktop"],
-        datasets: [{ data: [0,0,0], backgroundColor: [COLORS.blue, COLORS.green, COLORS.purple] }]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Devices' } } }
-    });
-
-    // ── Browsers ──
-    new Chart(document.getElementById('browsers'), {
-      type: 'doughnut',
-      data: {
-        labels: [],
-        datasets: [{ data: [], backgroundColor: PALETTE.slice(0, Object.keys(traffic.browsers).length) }]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Browsers' } } }
-    });
-
-    
-
     // ── Daily Active Users ──
-    new Chart(document.getElementById('dailyDAU'), {
+    allCharts.push(new Chart(document.getElementById('dailyDAU'), {
       type: 'line',
       data: {
-        labels: ["03-14","03-15","03-16","03-17","03-18","03-19","03-20","03-21","03-22","03-23","03-24","03-25","03-26","03-27","03-28","03-29","03-30","03-31","04-01","04-02","04-03","04-04","04-05","04-06","04-07","04-08","04-09","04-10","04-11","04-12"],
+        labels: ["Mar 14","Mar 15","Mar 16","Mar 17","Mar 18","Mar 19","Mar 20","Mar 21","Mar 22","Mar 23","Mar 24","Mar 25","Mar 26","Mar 27","Mar 28","Mar 29","Mar 30","Mar 31","Apr 1","Apr 2","Apr 3","Apr 4","Apr 5","Apr 6","Apr 7","Apr 8","Apr 9","Apr 10","Apr 11","Apr 12"],
         datasets: [{
           label: 'Active Users',
           data: [0,0,0,31,11,11,16,3,6,9,16,3,4,5,13,21,20,9,5,3,7,8,3,19,53,18,11,8,14,5],
-          borderColor: COLORS.green,
-          backgroundColor: 'rgba(63,185,80,0.1)',
-          fill: true,
-          tension: 0.3,
+          borderColor: C.green,
+          backgroundColor: C.green + '18',
+          fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5
         }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-    });
+      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false } }, scales: baseScales('Users') }
+    }));
 
     // ── Event Categories ──
-    new Chart(document.getElementById('eventCategories'), {
+    allCharts.push(new Chart(document.getElementById('eventCategories'), {
       type: 'bar',
       data: {
-        labels: ["onboarding","retention","feature","lesson","recording","feedback","mobile"],
-        datasets: [{ label: 'Events', data: [548,80,94,17,41,15,33], backgroundColor: PALETTE.slice(0, Object.keys(events.categories).length) }]
+        labels: ["Onboarding","Retention","Feature","Lesson","Recording","Feedback","Mobile"],
+        datasets: [{ data: [548,80,94,17,41,15,33], backgroundColor: PALETTE.slice(0, 7).map(c => c + 'cc'), borderRadius: 4 }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: baseScales('Events') }
+    }));
+    
   </script>
 </body>
 </html>
