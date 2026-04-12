@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpeakUp Analytics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e1e4e8;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 28px; margin-bottom: 4px; color: #fff; }
+    .subtitle { color: #8b949e; margin-bottom: 32px; font-size: 14px; }
+    h2 {
+      font-size: 18px;
+      color: #c9d1d9;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #21262d;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .stat-card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; color: #fff; margin-top: 4px; }
+    .stat-card .sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .chart-card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .chart-card h3 { font-size: 14px; color: #c9d1d9; margin-bottom: 12px; }
+    canvas { width: 100% !important; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #21262d; font-size: 13px; }
+    th { color: #8b949e; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { color: #c9d1d9; }
+    .funnel { display: flex; flex-direction: column; gap: 8px; }
+    .funnel-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .funnel-bar {
+      height: 32px;
+      background: linear-gradient(90deg, #238636, #2ea043);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      min-width: 40px;
+      transition: width 0.3s;
+    }
+    .funnel-label { font-size: 13px; color: #8b949e; min-width: 140px; }
+    footer { text-align: center; color: #484f58; font-size: 12px; margin-top: 48px; padding: 16px 0; border-top: 1px solid #21262d; }
+    @media (max-width: 600px) {
+      .chart-grid { grid-template-columns: 1fr; }
+      body { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>SpeakUp Analytics</h1>
+  <p class="subtitle">Last 30 days &middot; Generated 4/12/2026, 2:42:13 PM MT</p>
+
+  <!-- ── Summary Stats ── -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Total Page Views</div>
+      <div class="value">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Avg Daily Views</div>
+      <div class="value">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Recording Completion</div>
+      <div class="value">43%</div>
+      <div class="sub">15 / 35</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Lesson Completion</div>
+      <div class="value">3%</div>
+      <div class="sub">1 / 29</div>
+    </div>
+  </div>
+
+  <!-- ── Traffic Section ── -->
+  <h2>Traffic</h2>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Daily Page Views &amp; Visitors</h3>
+      <canvas id="dailyTraffic"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Top Pages</h3>
+      <canvas id="topPages"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Top Referrers</h3>
+      <p style="color:#484f58;font-size:13px;padding:24px 0;">No external referrers yet</p>
+    </div>
+    <div class="chart-card">
+      <h3>Devices &amp; Browsers</h3>
+      <div style="display:flex;gap:16px;">
+        <div style="flex:1;"><canvas id="devices"></canvas></div>
+        <div style="flex:1;"><canvas id="browsers"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <!-- ── User Behavior Section ── -->
+  <h2>User Behavior</h2>
+
+  <div class="chart-card" style="margin-bottom:16px;">
+    <h3>Signup Funnel</h3>
+    <div class="funnel">
+      <div class="funnel-step"><span class="funnel-label">Landing Page</span><div class="funnel-bar" style="width:100%">470</div></div><div class="funnel-step"><span class="funnel-label">Signup Page</span><div class="funnel-bar" style="width:5%">23</div></div><div class="funnel-step"><span class="funnel-label">Signup Complete</span><div class="funnel-bar" style="width:5%">6</div></div><div class="funnel-step"><span class="funnel-label">Onboarding Complete</span><div class="funnel-bar" style="width:5%">1</div></div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Daily Active Users</h3>
+      <canvas id="dailyDAU"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Events by Category</h3>
+      <canvas id="eventCategories"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-top:16px;">
+    <h3>Top Events</h3>
+    <table>
+      <thead><tr><th>Event</th><th>Count</th></tr></thead>
+      <tbody>
+        <tr><td>landing_page_view</td><td>470</td></tr><tr><td>dashboard_viewed</td><td>80</td></tr><tr><td>try_page_used</td><td>35</td></tr><tr><td>recording_started</td><td>35</td></tr><tr><td>lesson_started</td><td>29</td></tr><tr><td>signup_page_view</td><td>23</td></tr><tr><td>analytics_page_viewed</td><td>20</td></tr><tr><td>track_selected</td><td>17</td></tr><tr><td>recording_completed</td><td>15</td></tr><tr><td>feedback_viewed</td><td>15</td></tr><tr><td>onboarding_started</td><td>14</td></tr><tr><td>free_practice_started</td><td>13</td></tr><tr><td>lesson_step_viewed</td><td>11</td></tr><tr><td>login_complete</td><td>10</td></tr><tr><td>onboarding_goals_selected</td><td>8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>SpeakUp Analytics Dashboard &middot; Auto-generated 4/12/2026, 2:42:13 PM MT</footer>
+
+  <script>
+    const COLORS = {
+      blue: '#58a6ff',
+      green: '#3fb950',
+      purple: '#bc8cff',
+      orange: '#d29922',
+      red: '#f85149',
+      cyan: '#39d2c0',
+      pink: '#f778ba',
+    };
+    const PALETTE = [COLORS.blue, COLORS.green, COLORS.purple, COLORS.orange, COLORS.red, COLORS.cyan, COLORS.pink];
+
+    Chart.defaults.color = '#8b949e';
+    Chart.defaults.borderColor = '#21262d';
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+    // ── Daily Traffic ──
+    new Chart(document.getElementById('dailyTraffic'), {
+      type: 'line',
+      data: {
+        labels: ["03-14","03-15","03-16","03-17","03-18","03-19","03-20","03-21","03-22","03-23","03-24","03-25","03-26","03-27","03-28","03-29","03-30","03-31","04-01","04-02","04-03","04-04","04-05","04-06","04-07","04-08","04-09","04-10","04-11","04-12"],
+        datasets: [
+          {
+            label: 'Page Views',
+            data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            borderColor: COLORS.blue,
+            backgroundColor: 'rgba(88,166,255,0.1)',
+            fill: true,
+            tension: 0.3,
+          },
+          {
+            label: 'Unique Visitors',
+            data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            borderColor: COLORS.green,
+            backgroundColor: 'rgba(63,185,80,0.1)',
+            fill: true,
+            tension: 0.3,
+          }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    // ── Top Pages ──
+    new Chart(document.getElementById('topPages'), {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{ label: 'Views', data: [], backgroundColor: COLORS.blue }]
+      },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    
+
+    // ── Devices ──
+    new Chart(document.getElementById('devices'), {
+      type: 'doughnut',
+      data: {
+        labels: ["Mobile","Tablet","Desktop"],
+        datasets: [{ data: [0,0,0], backgroundColor: [COLORS.blue, COLORS.green, COLORS.purple] }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Devices' } } }
+    });
+
+    // ── Browsers ──
+    new Chart(document.getElementById('browsers'), {
+      type: 'doughnut',
+      data: {
+        labels: [],
+        datasets: [{ data: [], backgroundColor: PALETTE.slice(0, Object.keys(traffic.browsers).length) }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Browsers' } } }
+    });
+
+    
+
+    // ── Daily Active Users ──
+    new Chart(document.getElementById('dailyDAU'), {
+      type: 'line',
+      data: {
+        labels: ["03-14","03-15","03-16","03-17","03-18","03-19","03-20","03-21","03-22","03-23","03-24","03-25","03-26","03-27","03-28","03-29","03-30","03-31","04-01","04-02","04-03","04-04","04-05","04-06","04-07","04-08","04-09","04-10","04-11","04-12"],
+        datasets: [{
+          label: 'Active Users',
+          data: [0,0,0,31,11,11,16,3,6,9,16,3,4,5,13,21,20,9,5,3,7,8,3,19,53,18,11,8,14,5],
+          borderColor: COLORS.green,
+          backgroundColor: 'rgba(63,185,80,0.1)',
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    // ── Event Categories ──
+    new Chart(document.getElementById('eventCategories'), {
+      type: 'bar',
+      data: {
+        labels: ["onboarding","retention","feature","lesson","recording","feedback","mobile"],
+        datasets: [{ label: 'Events', data: [548,80,94,17,41,15,33], backgroundColor: PALETTE.slice(0, Object.keys(events.categories).length) }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+  </script>
+</body>
+</html>
