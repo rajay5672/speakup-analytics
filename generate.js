@@ -661,7 +661,7 @@ function barListHTML(items, { showFavicon = false, showFlag = false, total = 0 }
     if (showFavicon) {
       const host = meta || '';
       if (host) {
-        prefixHTML = '<img class="bar-item-favicon" src="' + faviconUrl(host) + '" onerror="this.style.display=\'none\'" alt="">';
+        prefixHTML = '<img class="bar-item-favicon" src="' + faviconUrl(host) + '" onerror="this.style.display=&quot;none&quot;" alt="">';
       } else {
         prefixHTML = '<svg class="bar-item-favicon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="color:var(--text-3)"><circle cx="7" cy="7" r="5.5"/><path d="M7 1.5S5 4 5 7s2 5.5 2 5.5M7 1.5S9 4 9 7s-2 5.5-2 5.5M1.5 7h11"/></svg>';
       }
